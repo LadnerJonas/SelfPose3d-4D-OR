@@ -100,6 +100,10 @@ class JointsDataset(Dataset):
         return len(self.db)
 
     def __getitem__(self, idx):
+        if(idx >= len(self.db)):
+            print(f"idx {idx} and {len(self.db)}")
+            return None, None, None, None, None, None
+
         db_rec = copy.deepcopy(self.db[idx])
 
         image_file = db_rec['image']

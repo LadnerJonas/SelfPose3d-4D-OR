@@ -74,7 +74,15 @@ def get_optimizer(model):
 
     return model, optimizer
 
+class CustomDataset(torch.utils.data.Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
 
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        return self.dataset[idx]
 def main():
     # seed = 0
     # torch.manual_seed(seed)
@@ -90,6 +98,8 @@ def main():
     gpus = [int(i) for i in config.GPUS.split(",")]
     print("=> Loading data ..")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    logger.info(config.DATASET)
+    logger.info(json.dumps(config.DATASET))
     train_dataset = eval("dataset." + config.DATASET.TRAIN_DATASET)(
         config,
         config.DATASET.TRAIN_SUBSET,
@@ -101,6 +111,10 @@ def main():
             ]
         ),
     )
+    print(len(train_dataset))
+    print("train batch size: ", config.TRAIN.BATCH_SIZE * len(gpus))
+
+    #train_dataset = CustomDataset(train_dataset)
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -194,6 +208,8 @@ def main():
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, config.TRAIN.LR_STEP, config.TRAIN.LR_FACTOR, last_epoch=last_epoch
     )
+    torch.cuda.empty_cache()
+
     for epoch in range(start_epoch, end_epoch):
         print("Epoch: {}".format(epoch))
         logger.info("learning rate for this epoch {}".format(lr_scheduler.get_last_lr()))

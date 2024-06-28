@@ -24,18 +24,18 @@ from utils.transforms import fliplr_joints, projectPoints
 logger = logging.getLogger(__name__)
 
 TRAIN_LIST = [
-    "160422_ultimatum1",
-    "160224_haggling1",
-    "160226_haggling1",
-    "161202_haggling1",
-    "160906_ian1",
-    "160906_ian2",
-    "160906_ian3",
-    "160906_band1",
-    "160906_band2",
-    #"160906_band3",
+    "holistic_take1",
+    #"holistic_take2",
+    #"holistic_take3",
+    #"holistic_take4",
+    #"holistic_take5",
+    #"holistic_take6",
+    #"holistic_take7",
+    #"holistic_take8",
+    #"holistic_take9",
+    #"holistic_take10",
 ]
-VAL_LIST = ["160224_haggling1"]
+VAL_LIST = ["holistic_take1"]
 
 JOINTS_DEF = {
     "neck": 0,
@@ -78,8 +78,9 @@ LIMBS = [
 ]
 
 
-class Panoptic(JointsDataset):
+class Fdor(JointsDataset):
     def __init__(self, cfg, image_set, is_train, transform=None):
+        print("inside fdor.py")
         super().__init__(cfg, image_set, is_train, transform)
         self.pixel_std = 200.0
         self.joints_def = JOINTS_DEF
@@ -87,8 +88,11 @@ class Panoptic(JointsDataset):
         self.num_joints = len(JOINTS_DEF)
         ROOT = "./data"
         self.dataset_suffix = cfg.DATASET.SUFFIX if is_train else "sub"
-        self.camera_num_total = cfg.DATASET.CAMERA_NUM_TOTAL
-        self.cameras = cfg.DATASET.CAMERAS
+        #self.camera_num_total = cfg.DATASET.CAMERA_NUM_TOTAL
+        self.camera_num_total = 2
+        #self.cameras = cfg.DATASET.CAMERAS
+        self.cameras = [0,2,4]
+        print(self.cameras)
         # Camera_num_total is set to 5. 
         # Cameras is a list referring to the camera index. e.g. [0,1,2,3,4] / [0,2,3]
         # We always read the same pickle, and then select the relevant data based on camera index
@@ -96,14 +100,15 @@ class Panoptic(JointsDataset):
         if self.image_set == "train":
             self.sequence_list = TRAIN_LIST
             self._interval = 3
-            cam_list = [(0, 3), (0, 6), (0, 12), (0, 13), (0, 23)]
+            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
+            print(self.cam_list)
         elif self.image_set == "validation":
             self.sequence_list = VAL_LIST
             self._interval = 12
-            cam_list = [(0, 3), (0, 6), (0, 12), (0, 13), (0, 23)]
+            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
@@ -136,19 +141,21 @@ class Panoptic(JointsDataset):
             pickle.dump(info, open(self.db_file, "wb"))
         # self.db = self._get_db()
         self.db_size = len(self.db)
+        print(f"db_size {self.db_size}")
 
     def _get_db(self):
-        width = 1920
-        height = 1080
+        width = 2048
+        height = 1536
         db = []
         for seq in self.sequence_list:
 
             cameras = self._get_cam(seq)
 
             curr_anno = osp.join(
-                self.dataset_root, seq, "hdPose3d_stage1_coco19"
+                self.dataset_root, seq, "hdPose3d"
             )
             anno_files = sorted(glob.iglob("{:s}/*.json".format(curr_anno)))
+            print("=> loading annotations from {:s}".format(curr_anno))
             print(anno_files)
 
             for i, file in enumerate(anno_files):
@@ -159,12 +166,13 @@ class Panoptic(JointsDataset):
                         continue
 
                     for k, v in cameras.items():
-                        postfix = osp.basename(file).replace("body3DScene", "")
-                        prefix = "{:02d}_{:02d}".format(k[0], k[1])
+                        postfix = osp.basename(file).replace("body3DScene", "").replace("_", "")
                         image = osp.join(
-                            seq, "hdImgs", prefix, prefix + postfix
+                            seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + postfix
                         )
                         image = image.replace("json", "jpg")
+                        print(f"image for {k} and {v}")
+                        print(image)
 
                         all_poses_3d = []
                         all_poses_vis_3d = []
@@ -238,7 +246,7 @@ class Panoptic(JointsDataset):
                             db.append(
                                 {
                                     "key": "{}_{}{}".format(
-                                        seq, prefix, postfix.split(".")[0]
+                                        seq, "{:02d}".format(k[1]), postfix.split(".")[0]
                                     ),
                                     "image": osp.join(self.dataset_root, image),
                                     "joints_3d": all_poses_3d,
@@ -278,7 +286,7 @@ class Panoptic(JointsDataset):
             [],
             [],
         )
-        for k in range(self.num_views):
+        for k in range(2):
             i, t, w, t3, m, ih = super().__getitem__(self.camera_num_total * idx + self.cameras[k])
             if i is None:
                 continue

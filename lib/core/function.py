@@ -217,6 +217,11 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
             # )
 
 def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
+    gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+    print("GPU memory usage: {:.2f} GB".format(gpu_memory_usage))
+    torch.cuda.empty_cache()
+    gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+    print("GPU memory usage after free: {:.2f} GB".format(gpu_memory_usage))
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -243,7 +248,9 @@ def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
     ) in enumerate(loader):
         data_time.update(time.time() - end)
 
-        if "panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET:
+        if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or
+                "fdor" in config.DATASET.TEST_DATASET
+        ):
             if config.NETWORK.TRAIN_ONLY_2D:
                 loss_2d, heatmaps = model(
                     views=inputs,
