@@ -101,6 +101,7 @@ class JointsDatasetSSV(Dataset):
         self.space_center = np.array(cfg.MULTI_PERSON.SPACE_CENTER)
         self.initial_cube_size = np.array(cfg.MULTI_PERSON.INITIAL_CUBE_SIZE)
         self.min_views_check = cfg.MIN_VIEWS_CHECK
+        print(f"length of db {len(self.db)} in JointsDatasetSSV and num views: {self.num_views}")
 
     def _get_db(self):
         raise NotImplementedError
@@ -111,6 +112,9 @@ class JointsDatasetSSV(Dataset):
     def __len__(
         self,
     ):
+
+        print(f"length of db {len(self.db)} in JointsDatasetSSV and num views: {self.num_views}")
+        print(self.db)
         return len(self.db)
 
     def __getitem__(self, idx):
@@ -225,7 +229,11 @@ class JointsDatasetSSV(Dataset):
                 )
             npersons_list = []
             for k in range(self.num_views):
+                if k >= len(self.cameras):
+                    continue
                 index = self.camera_num_total * idx + self.cameras[k]
+                if index >= len(self.db):
+                    continue
                 db_rec = deepcopy(self.db[index])
                 db_rec["camera"]["f"] = np.array([db_rec["camera"]["fx"], db_rec["camera"]["fy"]])[
                     ..., None
@@ -333,14 +341,19 @@ class JointsDatasetSSV(Dataset):
                 ):
                     break
                 else:
-                    idx = np.random.randint(0, (len(self) / self.num_views) - 10)
+                    print(f"{int(npers_allviews) == int(min_vis_roots1)} and {int(npers_allviews) == int(min_vis_roots2)}")
+                    print(f"miss {idx}")
+                    idx = np.random.randint(0, max((len(self) / self.num_views) - self.num_views, 1))
+                    print(f"new idx {idx}")
                     self.mis_count += 1
             else:
-                idx = np.random.randint(0, (len(self) / self.num_views) - 10)
+                idx = np.random.randint(0,  max((len(self) / self.num_views) - self.num_views, 1))
                 self.mis_count += 1                
 
 
         for k in range(self.num_views):
+            if k >= len(db_rec_list):
+                continue
             db_rec = db_rec_list[k]
             joints1, joints_vis1 = joints1_list[k], joints_vis1_list[k]
             joints2, joints_vis2 = joints2_list[k], joints_vis2_list[k]

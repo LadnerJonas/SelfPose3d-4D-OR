@@ -38,7 +38,7 @@ DATASET:
   ROOTIDX: 2
   CAMERA_NUM: 5
 NETWORK:
-  PRETRAINED_BACKBONE: "models/backbone_epoch20.pth.tar"
+  PRETRAINED_BACKBONE: "models/backbone_epoch20.pth.tar.old"
   PRETRAINED:  ""  # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
   TARGET_TYPE: gaussian
   INIT_ROOTNET: "models/cam5_rootnet_epoch2.pth.tar"

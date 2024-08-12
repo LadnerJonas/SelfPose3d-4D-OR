@@ -5,22 +5,22 @@ CUDNN:
 BACKBONE_MODEL: 'pose_resnet'
 MODEL: 'multi_person_posenet_ssv'
 DATA_DIR: ''
-GPUS: '0,1'
-OUTPUT_DIR: './results/adaptOR3D'
-LOG_DIR: './results/adaptOR3D'
-WORKERS: 6
+GPUS: '0'
+OUTPUT_DIR: './results/4D-OR/'
+LOG_DIR: './results/4D-OR/'
+WORKERS: 1
 PRINT_FREQ: 100
 WITH_SSV: True
 
 DATASET:
   COLOR_RGB: True
-  TRAIN_DATASET: 'panoptic_ssv'
-  TEST_DATASET: 'panoptic'
+  TRAIN_DATASET: 'fdor_ssv'
+  TEST_DATASET: 'fdor'
   DATA_FORMAT: jpg
   DATA_AUGMENTATION: False
   SUFFIX: "pseudo_hrnet_soft_9videos"
   FLIP: False
-  ROOT: 'data/panoptic-toolbox/data/' # 'data/panoptic/'
+  ROOT: 'data/4D-OR/data/' # 'data/panoptic/'
   ROT_FACTOR1: 45
   ROT_FACTOR2: 45
   SCALE_FACTOR1: 0.35
@@ -30,9 +30,9 @@ DATASET:
   TEST_SUBSET: 'validation'
   TRAIN_SUBSET: 'train'
   ROOTIDX: 2
-  CAMERA_NUM: 5
+  CAMERA_NUM: 2
 NETWORK:
-  PRETRAINED_BACKBONE: "models/backbone_epoch20.pth.tar"
+  PRETRAINED_BACKBONE: "models/4D-OR/backbone_final.pth.tar"
   PRETRAINED:  ''  # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
   TARGET_TYPE: gaussian
   INIT_ROOTNET: ''
@@ -42,8 +42,8 @@ NETWORK:
   PRETRAINED_BACKBONE_PSEUDOGT: True
   ROOTNET_BUFFER_SIZE: 10000
   IMAGE_SIZE_ORIG:
-  - 1920
-  - 1080  
+  - 2048
+  - 1536
   IMAGE_SIZE:
   - 960
   - 512

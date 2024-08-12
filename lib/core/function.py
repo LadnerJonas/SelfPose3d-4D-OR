@@ -69,7 +69,8 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
     ) in enumerate(loader):
         data_time.update(time.time() - end)
 
-        if "panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or "campus" in config.DATASET.TEST_DATASET:
+        if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or
+                "campus" in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET):
             pred2, heatmaps3, grid_centers, loss_dict = model(
                 views1=inputs1,
                 meta1=meta1,
@@ -247,6 +248,11 @@ def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
         input_heatmap,
     ) in enumerate(loader):
         data_time.update(time.time() - end)
+        gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        print("GPU memory usage {}: {:.2f} GB".format(i,gpu_memory_usage))
+        torch.cuda.empty_cache()
+        gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        print("GPU memory usage after free {}: {:.2f} GB".format(i,gpu_memory_usage))
 
         if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or
                 "fdor" in config.DATASET.TEST_DATASET
@@ -373,7 +379,7 @@ def validate_3d(config, model, loader, epoch, output_dir, with_ssv=False):
             input_heatmap,
         ) in enumerate(loader):
             data_time.update(time.time() - end)
-            if "panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or "campus" in config.DATASET.TEST_DATASET:
+            if "panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or "campus" in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET:
                 if with_ssv:
                     pred, heatmaps, grid_centers = model(
                         views1=inputs,

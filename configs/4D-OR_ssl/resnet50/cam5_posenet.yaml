@@ -8,7 +8,7 @@ DATA_DIR: ''
 GPUS: '0'
 OUTPUT_DIR: './results/4D-OR/'
 LOG_DIR: './results/4D-OR/'
-WORKERS: 2
+WORKERS: 1
 PRINT_FREQ: 100
 WITH_SSV: True
 WITH_ATTN: True
@@ -20,7 +20,7 @@ L1_ATTN: True
 
 DATASET:
   COLOR_RGB: True
-  TRAIN_DATASET: 'fdor'
+  TRAIN_DATASET: 'fdor_ssv'
   TEST_DATASET: 'fdor'
   DATA_FORMAT: jpg
   DATA_AUGMENTATION: False
@@ -36,12 +36,12 @@ DATASET:
   TEST_SUBSET: 'validation'
   TRAIN_SUBSET: 'train'
   ROOTIDX: 2
-  CAMERA_NUM: 5
+  CAMERA_NUM: 2
 NETWORK:
-  PRETRAINED_BACKBONE: "models/backbone_epoch20.pth.tar"
+  PRETRAINED_BACKBONE: "models/4D-OR/backbone_final.pth.tar"
   PRETRAINED:  ""  # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
   TARGET_TYPE: gaussian
-  INIT_ROOTNET: "models/cam5_rootnet_epoch2.pth.tar"
+  INIT_ROOTNET: "models/4D-OR/rootnet_final.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
   INIT_ALL: ""
   TRAIN_BACKBONE: True
   TRAIN_ONLY_ROOTNET: False
@@ -56,8 +56,8 @@ NETWORK:
   - 960
   - 512
   HEATMAP_SIZE:
-  - 512
-  - 384
+  - 240
+  - 128
   SIGMA: 3
   NUM_JOINTS: 15
   USE_GT: False

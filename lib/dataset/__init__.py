@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 from dataset.fdor import Fdor as fdor
+from dataset.fdor_ssv import fdorSSV as fdor_ssv
 from dataset.panoptic import Panoptic as panoptic
 from dataset.panoptic_ssv import panopticSSV as panoptic_ssv
 from dataset.shelf_synthetic import ShelfSynthetic as shelf_synthetic

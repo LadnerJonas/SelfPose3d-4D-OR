@@ -33,6 +33,8 @@ import dataset
 import models
 import random
 import numpy as np
+
+
 #parser.add_argument("--cfg", help="experiment configure file name", required=False, default="./configs/panoptic_ssv/resnet50/run_18_1_train_pseudo_gt_3d.yaml", type=str)
 
 def parse_args():
@@ -47,7 +49,7 @@ def parse_args():
 
 def get_optimizer(model):
     lr = config.TRAIN.LR
-    with_root_net = not config.NETWORK.USE_GT # USE_GT means using GT proposals for pose regression
+    with_root_net = not config.NETWORK.USE_GT  # USE_GT means using GT proposals for pose regression
     freeze_root_net = config.NETWORK.FREEZE_ROOTNET
     train_backbone = config.NETWORK.TRAIN_BACKBONE
     if train_backbone:
@@ -74,6 +76,7 @@ def get_optimizer(model):
 
     return model, optimizer
 
+
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, dataset):
         self.dataset = dataset
@@ -83,19 +86,22 @@ class CustomDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.dataset[idx]
+
+
 def main():
     # seed = 0
     # torch.manual_seed(seed)
     # np.random.seed(seed)
     # random.seed(seed)
     args = parse_args()
-    with_ssv = config.WITH_SSV # whether using self-supervised learning
+    with_ssv = config.WITH_SSV  # whether using self-supervised learning
     logger, final_output_dir, tb_log_dir = create_logger(config, args.cfg, "train")
 
     logger.info(pprint.pformat(args))
     logger.info(pprint.pformat(config))
 
     gpus = [int(i) for i in config.GPUS.split(",")]
+    print(f"gpus: {gpus}")
     print("=> Loading data ..")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     logger.info(config.DATASET)
@@ -112,6 +118,9 @@ def main():
         ),
     )
     print(len(train_dataset))
+    #for i, x in enumerate(train_dataset):
+
+        #print(f"Batch {i}: data: {x}")
     print("train batch size: ", config.TRAIN.BATCH_SIZE * len(gpus))
 
     #train_dataset = CustomDataset(train_dataset)
@@ -123,6 +132,10 @@ def main():
         num_workers=config.WORKERS,
         pin_memory=False,
     )
+
+    print("read out train data loader: len ", len(train_loader))
+    #for i, x in enumerate(train_loader):
+        #print(f"Batch {i}: Inputs shape: {x}")
 
     test_dataset = eval("dataset." + config.DATASET.TEST_DATASET)(
         config,
@@ -136,6 +149,8 @@ def main():
         ),
     )
 
+    print("test dataset: ", test_dataset, " length:", len(test_dataset))
+
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=config.TEST.BATCH_SIZE * len(gpus),
@@ -143,6 +158,10 @@ def main():
         num_workers=config.WORKERS,
         pin_memory=False,
     )
+
+    print("read out test data loader: len ", len(test_loader))
+    #for i, (data, label) in enumerate(test_loader):
+    #    print(f"Batch {i}: Data shape: {data.shape}, Label shape: {label.shape}")
 
     cudnn.benchmark = config.CUDNN.BENCHMARK
     torch.backends.cudnn.deterministic = config.CUDNN.DETERMINISTIC
@@ -152,7 +171,7 @@ def main():
     model = eval("models." + config.MODEL + ".get_multi_person_pose_net")(config, is_train=True)
     with torch.no_grad():
         model = torch.nn.DataParallel(model, device_ids=gpus).cuda()
-    print("=> model ->", model)
+    #print("=> model ->", model)
 
     model, optimizer = get_optimizer(model)
 
@@ -191,7 +210,7 @@ def main():
         st_dict = torch.load(config.NETWORK.INIT_ALL)
         mk, uk = model.module.load_state_dict(st_dict, strict=True)
         print("=> missing keys in all =", mk)
-        print("=> unexpected keys in all =", uk)        
+        print("=> unexpected keys in all =", uk)
 
     if config.TRAIN.RESUME:
         start_epoch, model, optimizer, best_precision, last_epoch = load_checkpoint(
