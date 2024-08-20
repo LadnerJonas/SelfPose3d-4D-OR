@@ -35,7 +35,13 @@ TRAIN_LIST = [
     #"holistic_take9",
     #"holistic_take10",
 ]
-VAL_LIST = ["holistic_take1"]
+VAL_LIST = [
+    "holistic_take1",
+    #"holistic_take2",
+    #"holistic_take3",
+    #"holistic_take4",
+    #"holistic_take5",
+]
 
 JOINTS_DEF = {
     "neck": 0,
@@ -78,9 +84,9 @@ LIMBS = [
 ]
 
 
-class Fdor(JointsDataset):
+class FdorWithoutAnnotations(JointsDataset):
     def __init__(self, cfg, image_set, is_train, transform=None):
-        print("inside fdor.py")
+        print("inside fdor-without-annotations.py")
         super().__init__(cfg, image_set, is_train, transform)
         self.pixel_std = 200.0
         self.joints_def = JOINTS_DEF
@@ -89,9 +95,9 @@ class Fdor(JointsDataset):
         ROOT = "./data"
         self.dataset_suffix = cfg.DATASET.SUFFIX if is_train else "sub"
         #self.camera_num_total = cfg.DATASET.CAMERA_NUM_TOTAL
-        self.camera_num_total = 2
+        self.camera_num_total = 5
         #self.cameras = cfg.DATASET.CAMERAS
-        self.cameras = [0,2] # [0,2,4]
+        self.cameras = [0,1,2,3,4] # [0,2,4]
         print(self.cameras)
         # Camera_num_total is set to 5. 
         # Cameras is a list referring to the camera index. e.g. [0,1,2,3,4] / [0,2,3]
@@ -100,7 +106,7 @@ class Fdor(JointsDataset):
         if self.image_set == "train":
             self.sequence_list = TRAIN_LIST
             self._interval = 3
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
@@ -108,7 +114,7 @@ class Fdor(JointsDataset):
         elif self.image_set == "validation":
             self.sequence_list = VAL_LIST
             self._interval = 12
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
@@ -150,6 +156,7 @@ class Fdor(JointsDataset):
         for seq in self.sequence_list:
 
             cameras = self._get_cam(seq)
+            print(f"cameras to work on: {cameras}")
 
             curr_anno = osp.join(
                 self.dataset_root, seq, "hdPose3d"
@@ -158,105 +165,107 @@ class Fdor(JointsDataset):
             print("=> loading annotations from {:s}".format(curr_anno))
             print(anno_files)
 
-            for i, file in enumerate(anno_files):
-                #if i % self._interval == 0 or : # not needed as annotation files are already sparse
-                if True:
-                    with open(file) as dfile:
-                        bodies = json.load(dfile)["bodies"]
-                    if len(bodies) == 0:
+            # good start: camera01_colorimage-002161
+            # good end: camera01_colorimage-020521
+            with open(osp.join(self.dataset_root, "holistic_take1", "hdPose3d", "body3DScene_000541.json")) as f:
+                bodies = json.load(f)["bodies"]
+            for i in range(2161, 20521, 1):
+                if i in [2431, 2521, 2611]:
+                    continue
+                # if i % self._interval == 0 or : # not needed as annotation files are already sparse
+
+                for k, v in cameras.items():
+                    image = osp.join(
+                        seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + str(i).zfill(6) + ".jpg"
+                    )
+                    if not osp.exists(osp.join(self.dataset_root, image)):
                         continue
+                    #print(f"image for {k} and {v}")
+                    #print(image)
 
-                    for k, v in cameras.items():
-                        postfix = osp.basename(file).replace("body3DScene", "").replace("_", "")
-                        image = osp.join(
-                            seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + postfix
+                    all_poses_3d = []
+                    all_poses_vis_3d = []
+                    all_poses = []
+                    all_poses_vis = []
+                    for body in bodies:
+                        pose3d = np.array(body["joints19"]).reshape((-1, 4))
+                        pose3d = pose3d[: self.num_joints]
+
+                        joints_vis = pose3d[:, -1] > 0.1
+
+                        if not joints_vis[self.root_id]:
+                            continue
+
+                        # Coordinate transformation
+                        M = np.array(
+                            [
+                                [1.0, 0.0, 0.0],
+                                [0.0, 0.0, -1.0],
+                                [0.0, 1.0, 0.0],
+                            ]
                         )
-                        image = image.replace("json", "jpg")
-                        print(f"image for {k} and {v}")
-                        print(image)
+                        pose3d[:, 0:3] = pose3d[:, 0:3].dot(M)
 
-                        all_poses_3d = []
-                        all_poses_vis_3d = []
-                        all_poses = []
-                        all_poses_vis = []
-                        for body in bodies:
-                            pose3d = np.array(body["joints19"]).reshape((-1, 4))
-                            pose3d = pose3d[: self.num_joints]
-
-                            joints_vis = pose3d[:, -1] > 0.1
-
-                            if not joints_vis[self.root_id]:
-                                continue
-
-                            # Coordinate transformation
-                            M = np.array(
-                                [
-                                    [1.0, 0.0, 0.0],
-                                    [0.0, 0.0, -1.0],
-                                    [0.0, 1.0, 0.0],
-                                ]
+                        all_poses_3d.append(pose3d[:, 0:3] * 10.0)
+                        all_poses_vis_3d.append(
+                            np.repeat(
+                                np.reshape(joints_vis, (-1, 1)), 3, axis=1
                             )
-                            pose3d[:, 0:3] = pose3d[:, 0:3].dot(M)
+                        )
 
-                            all_poses_3d.append(pose3d[:, 0:3] * 10.0)
-                            all_poses_vis_3d.append(
-                                np.repeat(
-                                    np.reshape(joints_vis, (-1, 1)), 3, axis=1
-                                )
-                            )
+                        pose2d = np.zeros((pose3d.shape[0], 2))
+                        pose2d[:, :2] = projectPoints(
+                            pose3d[:, 0:3].transpose(),
+                            v["K"],
+                            v["R"],
+                            v["t"],
+                            v["distCoef"],
+                        ).transpose()[:, :2]
+                        x_check = np.bitwise_and(
+                            pose2d[:, 0] >= 0, pose2d[:, 0] <= width - 1
+                        )
+                        y_check = np.bitwise_and(
+                            pose2d[:, 1] >= 0, pose2d[:, 1] <= height - 1
+                        )
+                        check = np.bitwise_and(x_check, y_check)
+                        joints_vis[np.logical_not(check)] = 0
 
-                            pose2d = np.zeros((pose3d.shape[0], 2))
-                            pose2d[:, :2] = projectPoints(
-                                pose3d[:, 0:3].transpose(),
-                                v["K"],
-                                v["R"],
-                                v["t"],
-                                v["distCoef"],
-                            ).transpose()[:, :2]
-                            x_check = np.bitwise_and(
-                                pose2d[:, 0] >= 0, pose2d[:, 0] <= width - 1
+                        all_poses.append(pose2d)
+                        all_poses_vis.append(
+                            np.repeat(
+                                np.reshape(joints_vis, (-1, 1)), 2, axis=1
                             )
-                            y_check = np.bitwise_and(
-                                pose2d[:, 1] >= 0, pose2d[:, 1] <= height - 1
-                            )
-                            check = np.bitwise_and(x_check, y_check)
-                            joints_vis[np.logical_not(check)] = 0
+                        )
 
-                            all_poses.append(pose2d)
-                            all_poses_vis.append(
-                                np.repeat(
-                                    np.reshape(joints_vis, (-1, 1)), 2, axis=1
-                                )
-                            )
-
-                        if len(all_poses_3d) > 0:
-                            our_cam = {}
-                            our_cam["R"] = v["R"]
-                            our_cam["T"] = (
+                    if len(all_poses_3d) > 0:
+                        our_cam = {}
+                        our_cam["R"] = v["R"]
+                        our_cam["T"] = (
                                 -np.dot(v["R"].T, v["t"]) * 10.0
-                            )  # cm to mm
-                            our_cam["fx"] = np.array(v["K"][0, 0])
-                            our_cam["fy"] = np.array(v["K"][1, 1])
-                            our_cam["cx"] = np.array(v["K"][0, 2])
-                            our_cam["cy"] = np.array(v["K"][1, 2])
-                            our_cam["k"] = v["distCoef"][[0, 1, 4]].reshape(
-                                3, 1
-                            )
-                            our_cam["p"] = v["distCoef"][[2, 3]].reshape(2, 1)
+                        )  # cm to mm
+                        our_cam["fx"] = np.array(v["K"][0, 0])
+                        our_cam["fy"] = np.array(v["K"][1, 1])
+                        our_cam["cx"] = np.array(v["K"][0, 2])
+                        our_cam["cy"] = np.array(v["K"][1, 2])
+                        our_cam["k"] = v["distCoef"][[0, 1, 4]].reshape(
+                            3, 1
+                        )
+                        our_cam["p"] = v["distCoef"][[2, 3]].reshape(2, 1)
 
-                            db.append(
-                                {
-                                    "key": "{}_{}{}".format(
-                                        seq, "{:02d}".format(k[1]), postfix.split(".")[0]
-                                    ),
-                                    "image": osp.join(self.dataset_root, image),
-                                    "joints_3d": all_poses_3d,
-                                    "joints_3d_vis": all_poses_vis_3d,
-                                    "joints_2d": all_poses,
-                                    "joints_2d_vis": all_poses_vis,
-                                    "camera": our_cam,
-                                }
-                            )
+                        db.append(
+                            {
+                                "key": "{}_{}{}".format(
+                                    seq, "{:02d}".format(k[1]), str(i).zfill(6)
+                                ),
+                                "image": osp.join(self.dataset_root, image),
+                                "joints_3d": all_poses_3d,
+                                "joints_3d_vis": all_poses_vis_3d,
+                                "joints_2d": all_poses,
+                                "joints_2d_vis": all_poses_vis,
+                                "camera": our_cam,
+                                "seq": seq,
+                            }
+                        )
         return db
 
     def _get_cam(self, seq):
@@ -373,7 +382,7 @@ class Fdor(JointsDataset):
             total_gt += len(joints_3d)
 
         if output_dir:
-            output_file = os.path.join(output_dir, "predictions_dump.pkl")
+            output_file = os.path.join(output_dir, f"predictions_dump_{self.db[0]['seq']}.pkl")
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
             print("dumping the results at :", output_file)
             pickle.dump(self.db, open(output_file, "wb"))

@@ -10,6 +10,9 @@ from __future__ import print_function
 
 from dataset.fdor import Fdor as fdor
 from dataset.fdor_ssv import fdorSSV as fdor_ssv
+from dataset.fdor_without_annotations import FdorWithoutAnnotations as fdor_without_annotations
+from dataset.fdor_with_predictions import Fdor_with_predictions as fdor_with_predictions
+from dataset.fdor_ssv_with_predictions import FdorSSV_with_predictions as fdor_ssv_with_predictions
 from dataset.panoptic import Panoptic as panoptic
 from dataset.panoptic_ssv import panopticSSV as panoptic_ssv
 from dataset.shelf_synthetic import ShelfSynthetic as shelf_synthetic

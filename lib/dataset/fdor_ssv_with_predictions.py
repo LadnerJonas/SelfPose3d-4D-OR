@@ -18,16 +18,16 @@ import logging
 import os
 import copy
 
-from dataset.JointsDataset import JointsDataset
-from utils.transforms import fliplr_joints, projectPoints
+from dataset.JointsDatasetSSV import JointsDatasetSSV
+from utils.transforms import projectPoints
 
 logger = logging.getLogger(__name__)
 
 TRAIN_LIST = [
-    "holistic_take1",
-    #"holistic_take2",
-    #"holistic_take3",
-    #"holistic_take4",
+    #"holistic_take1",
+    "holistic_take2",
+    "holistic_take3",
+    "holistic_take4",
     #"holistic_take5",
     #"holistic_take6",
     #"holistic_take7",
@@ -35,7 +35,13 @@ TRAIN_LIST = [
     #"holistic_take9",
     #"holistic_take10",
 ]
-VAL_LIST = ["holistic_take1"]
+VAL_LIST = [
+    #"holistic_take1",
+    #"holistic_take2",
+    #"holistic_take3",
+    #"holistic_take4",
+    "holistic_take5",
+]
 
 JOINTS_DEF = {
     "neck": 0,
@@ -78,10 +84,9 @@ LIMBS = [
 ]
 
 
-class Fdor(JointsDataset):
+class FdorSSV_with_predictions(JointsDatasetSSV):
     def __init__(self, cfg, image_set, is_train, transform=None):
-        print("inside fdor.py")
-        super().__init__(cfg, image_set, is_train, transform)
+        super().__init__(cfg, image_set, is_train, FLIP_LR_JOINTS15, transform)
         self.pixel_std = 200.0
         self.joints_def = JOINTS_DEF
         self.limbs = LIMBS
@@ -91,8 +96,7 @@ class Fdor(JointsDataset):
         #self.camera_num_total = cfg.DATASET.CAMERA_NUM_TOTAL
         self.camera_num_total = 2
         #self.cameras = cfg.DATASET.CAMERAS
-        self.cameras = [0,2] # [0,2,4]
-        print(self.cameras)
+        self.cameras = [0,2,4]
         # Camera_num_total is set to 5. 
         # Cameras is a list referring to the camera index. e.g. [0,1,2,3,4] / [0,2,3]
         # We always read the same pickle, and then select the relevant data based on camera index
@@ -104,7 +108,6 @@ class Fdor(JointsDataset):
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
-            print(self.cam_list)
         elif self.image_set == "validation":
             self.sequence_list = VAL_LIST
             self._interval = 12
@@ -121,16 +124,15 @@ class Fdor(JointsDataset):
         if osp.exists(self.db_file):
             print("=> loading the pickle file = ", self.db_file)
             info = pickle.load(open(self.db_file, "rb"))
-            print(self.sequence_list)
             # assert info["sequence_list"] == self.sequence_list
             assert info["interval"] == self._interval
             # assert info["cam_list"] == self.cam_list
-            print(ROOT)
             self.db = info["db"]
             for p in info["db"]:
                 p["image"] = os.path.join(ROOT, p["image"])
             print("=> self.db", len(self.db))
         else:
+            # fix it later
             self.db = self._get_db()
             info = {
                 "sequence_list": self.sequence_list,
@@ -141,7 +143,6 @@ class Fdor(JointsDataset):
             pickle.dump(info, open(self.db_file, "wb"))
         # self.db = self._get_db()
         self.db_size = len(self.db)
-        print(f"db_size {self.db_size}")
 
     def _get_db(self):
         width = 2048
@@ -152,14 +153,15 @@ class Fdor(JointsDataset):
             cameras = self._get_cam(seq)
 
             curr_anno = osp.join(
-                self.dataset_root, seq, "hdPose3d"
+                self.dataset_root, seq, "hdExtractedPredictions"
             )
-            anno_files = sorted(glob.iglob("{:s}/*.json".format(curr_anno)))
             print("=> loading annotations from {:s}".format(curr_anno))
-            print(anno_files)
+            anno_files = sorted(glob.iglob("{:s}/*.json".format(curr_anno)))
+            print("length: ", len(anno_files), "files: ",anno_files)
+
 
             for i, file in enumerate(anno_files):
-                #if i % self._interval == 0 or : # not needed as annotation files are already sparse
+                # if i % self._interval == 0: # not needed as annotation files are already sparse
                 if True:
                     with open(file) as dfile:
                         bodies = json.load(dfile)["bodies"]
@@ -167,7 +169,7 @@ class Fdor(JointsDataset):
                         continue
 
                     for k, v in cameras.items():
-                        postfix = osp.basename(file).replace("body3DScene", "").replace("_", "")
+                        postfix = osp.basename(file).replace("prediction-", "")
                         image = osp.join(
                             seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + postfix
                         )
@@ -279,52 +281,28 @@ class Fdor(JointsDataset):
         return cameras
 
     def __getitem__(self, idx):
-        input, target, weight, target_3d, meta, input_heatmap = (
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-        )
-        for k in range(self.num_views):
-            i, t, w, t3, m, ih = super().__getitem__(self.camera_num_total * idx + self.cameras[k])
-            if i is None:
-                print(f"error: {self.camera_num_total * idx + self.cameras[k]}, {self.camera_num_total} {idx} {self.cameras[k]} {k}")
-                continue
-            input.append(i)
-            target.append(t)
-            weight.append(w)
-            target_3d.append(t3)
-            meta.append(m)
-            input_heatmap.append(ih)
-        return input, target, weight, target_3d, meta, input_heatmap
+        return super().__getitem__(idx)
 
     def __len__(self):
         return self.db_size // self.camera_num_total
 
-    def evaluate(self, preds, roots=None, output_dir=""):
-        eval_list, eval_list_root = [], []
-        gt_num = self.db_size // self.camera_num_total
+    def evaluate(self, preds):
+        eval_list = []
+        gt_num = self.db_size // self.num_views
         assert len(preds) == gt_num, "number mismatch"
 
         total_gt = 0
         for i in range(gt_num):
-            index = self.camera_num_total * i
+            index = self.num_views * i
             db_rec = copy.deepcopy(self.db[index])
             joints_3d = db_rec["joints_3d"]
             joints_3d_vis = db_rec["joints_3d_vis"]
-            joints_3d_root = [a[self.root_id] for a in db_rec["joints_3d"]]
-            joints_3d_vis_root = [
-                a[self.root_id] for a in db_rec["joints_3d_vis"]
-            ]
 
             if len(joints_3d) == 0:
                 continue
 
             pred = preds[i].copy()
             pred = pred[pred[:, 0, 3] >= 0]
-
             for pose in pred:
                 mpjpes = []
                 for (gt, gt_vis) in zip(joints_3d, joints_3d_vis):
@@ -346,60 +324,21 @@ class Fdor(JointsDataset):
                     }
                 )
 
-            root = roots[i].copy()
-            root = root[root[:, 3] >= 0]
-            for rt in root:
-                mpjpes = []
-                for (gt, gt_vis) in zip(joints_3d_root, joints_3d_vis_root):
-                    vis = gt_vis[0] > 0
-                    if vis:
-                        mpjpe = np.mean(
-                            np.sqrt(np.sum((rt[0:3] - gt) ** 2, axis=-1))
-                        )
-                        mpjpes.append(mpjpe)
-                if len(mpjpes) > 0:
-                    min_gt = np.argmin(mpjpes)
-                    min_mpjpe = np.min(mpjpes)
-                    score = rt[4]
-                    eval_list_root.append(
-                        {
-                            "mpjpe": float(min_mpjpe),
-                            "score": float(score),
-                            "gt_id": int(total_gt + min_gt),
-                        }
-                    )
-            self.db[index]["preds_3d"] = pred
-            self.db[index]["roots_3d"] = root
             total_gt += len(joints_3d)
 
-        if output_dir:
-            output_file = os.path.join(output_dir, "predictions_dump.pkl")
-            os.makedirs(os.path.dirname(output_file), exist_ok=True)
-            print("dumping the results at :", output_file)
-            pickle.dump(self.db, open(output_file, "wb"))
-
         mpjpe_threshold = np.arange(25, 155, 25)
-        aps, aps_root = [], []
-        recs, recs_root = [], []
+        aps = []
+        recs = []
         for t in mpjpe_threshold:
             ap, rec = self._eval_list_to_ap(eval_list, total_gt, t)
-            ap_root, rec_root = self._eval_list_to_ap(
-                eval_list_root, total_gt, t
-            )
             aps.append(ap)
             recs.append(rec)
-            aps_root.append(ap_root)
-            recs_root.append(rec_root)
-        mpjpe_res = self._eval_list_to_mpjpe(eval_list)
-        mpjpe_res_root = self._eval_list_to_mpjpe(eval_list_root)
-        recall_res = self._eval_list_to_recall(eval_list, total_gt)
-        recall_res_root = self._eval_list_to_recall(eval_list_root, total_gt)
 
         return (
-            (aps, aps_root),
-            (recs, recs_root),
-            (mpjpe_res, mpjpe_res_root),
-            (recall_res, recall_res_root),
+            aps,
+            recs,
+            self._eval_list_to_mpjpe(eval_list),
+            self._eval_list_to_recall(eval_list, total_gt),
         )
 
     @staticmethod

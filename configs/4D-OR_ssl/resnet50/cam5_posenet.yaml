@@ -21,7 +21,7 @@ L1_ATTN: True
 DATASET:
   COLOR_RGB: True
   TRAIN_DATASET: 'fdor_ssv'
-  TEST_DATASET: 'fdor'
+  TEST_DATASET: 'fdor_without_annotations'
   DATA_FORMAT: jpg
   DATA_AUGMENTATION: False
   SUFFIX: "pseudo_hrnet_soft_9videos"
@@ -36,7 +36,7 @@ DATASET:
   TEST_SUBSET: 'validation'
   TRAIN_SUBSET: 'train'
   ROOTIDX: 2
-  CAMERA_NUM: 2
+  CAMERA_NUM: 6
 NETWORK:
   PRETRAINED_BACKBONE: "models/4D-OR/backbone_final.pth.tar"
   PRETRAINED:  ""  # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
@@ -90,7 +90,7 @@ TRAIN:
   L1_EPOCH: 5
 TEST:
   MODEL_FILE: 'model_best.pth.tar'
-  BATCH_SIZE: 4
+  BATCH_SIZE: 1
 DEBUG:
   DEBUG: true
   SAVE_HEATMAPS_GT: true

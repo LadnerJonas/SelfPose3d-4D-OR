@@ -24,15 +24,15 @@ from utils.transforms import fliplr_joints, projectPoints
 logger = logging.getLogger(__name__)
 
 TRAIN_LIST = [
-    "160422_ultimatum1",
+    #"160422_ultimatum1",
     "160224_haggling1",
-    "160226_haggling1",
-    "161202_haggling1",
-    "160906_ian1",
-    "160906_ian2",
-    "160906_ian3",
-    "160906_band1",
-    "160906_band2",
+    #"160226_haggling1",
+    #"161202_haggling1",
+    #"160906_ian1",
+    #"160906_ian2",
+    #"160906_ian3",
+    #"160906_band1",
+    #"160906_band2",
     #"160906_band3",
 ]
 VAL_LIST = ["160224_haggling1"]
@@ -146,7 +146,7 @@ class Panoptic(JointsDataset):
             cameras = self._get_cam(seq)
 
             curr_anno = osp.join(
-                self.dataset_root, seq, "hdPose3d_stage1_coco19"
+                self.dataset_root, seq, "hdPose3d_stage1_coco19/hd/"
             )
             anno_files = sorted(glob.iglob("{:s}/*.json".format(curr_anno)))
             print(anno_files)

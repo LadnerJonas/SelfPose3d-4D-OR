@@ -60,8 +60,8 @@ def main():
     console = logging.StreamHandler()
     logging.getLogger('').addHandler(console)                        
 
-    gpus = [int(i) for i in config.GPUS.split(',')]
-    #gpus = [0]
+    #gpus = [int(i) for i in config.GPUS.split(',')]
+    gpus = [0]
     print('=> Loading data ..')
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -105,10 +105,13 @@ def main():
     preds, roots = [], []
     with torch.no_grad():
         for i, (inputs, targets_2d, weights_2d, targets_3d, meta, input_heatmap) in enumerate(tqdm(test_loader)):
-            if 'panoptic' in config.DATASET.TEST_DATASET:
+            if 'panoptic' in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET:
                 if with_ssv:
                     if vis_attn:
+                        #print(inputs)
                         pred, _, grid_centers, attns = model(views1=inputs, meta1=meta, inference=True, visualize_attn=True)
+                        #print(pred)
+                        #print(grid_centers)
                         attn_output_dir = os.path.join(final_output_dir, 'attn_vis')
                         if not os.path.exists(attn_output_dir):
                             os.makedirs(attn_output_dir)
@@ -117,7 +120,12 @@ def main():
                             prefix = "{}_{:08}_{}".format(os.path.join(attn_output_dir, "valid"), i, view_name)
                             save_batch_heatmaps_multi(inputs[k], attns[k], "{}_hm_attn.jpg".format(prefix))
                     else:
+                        #print(i)
+                        #print(inputs)
                         pred, heatmaps, grid_centers = model(views1=inputs, meta1=meta, inference=True)
+                        #print(pred)
+                        #print(heatmaps)
+                        #print(grid_centers)
                 else:
                     pred, _, grid_centers, _, _, _ = model(views=inputs, meta=meta)
             elif 'campus' in config.DATASET.TEST_DATASET or 'shelf' in config.DATASET.TEST_DATASET:
@@ -126,11 +134,14 @@ def main():
             pred = pred.detach().cpu().numpy()
             root = grid_centers.detach().cpu().numpy()
             targets_3d = targets_3d[0].cpu().numpy()
+            #print(f"pred: {pred}")
+            #print(f"root: {root}")
+            #print(f"targets_3d: {targets_3d}")
             for b in range(pred.shape[0]):
                 preds.append(pred[b])
                 roots.append(root[b])
 
-        if 'panoptic' in config.DATASET.TEST_DATASET:
+        if 'panoptic' in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET:
             mpjpe_threshold = np.arange(25, 155, 25)
             aps_all, recs_all, mpjpe_all, avg_recall_all = test_dataset.evaluate(preds, roots, final_output_dir)
             types_eval = ["pose", "root"]

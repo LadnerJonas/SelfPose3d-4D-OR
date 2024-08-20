@@ -24,10 +24,10 @@ from utils.transforms import fliplr_joints, projectPoints
 logger = logging.getLogger(__name__)
 
 TRAIN_LIST = [
-    "holistic_take1",
-    #"holistic_take2",
-    #"holistic_take3",
-    #"holistic_take4",
+    #"holistic_take1",
+    "holistic_take2",
+    "holistic_take3",
+    "holistic_take4",
     #"holistic_take5",
     #"holistic_take6",
     #"holistic_take7",
@@ -35,7 +35,13 @@ TRAIN_LIST = [
     #"holistic_take9",
     #"holistic_take10",
 ]
-VAL_LIST = ["holistic_take1"]
+VAL_LIST = [
+    #"holistic_take1",
+    #"holistic_take2",
+    #"holistic_take3",
+    #"holistic_take4",
+    "holistic_take5",
+]
 
 JOINTS_DEF = {
     "neck": 0,
@@ -78,9 +84,9 @@ LIMBS = [
 ]
 
 
-class Fdor(JointsDataset):
+class Fdor_with_predictions(JointsDataset):
     def __init__(self, cfg, image_set, is_train, transform=None):
-        print("inside fdor.py")
+        print("inside fdor-with-predictions.py")
         super().__init__(cfg, image_set, is_train, transform)
         self.pixel_std = 200.0
         self.joints_def = JOINTS_DEF
@@ -152,7 +158,7 @@ class Fdor(JointsDataset):
             cameras = self._get_cam(seq)
 
             curr_anno = osp.join(
-                self.dataset_root, seq, "hdPose3d"
+                self.dataset_root, seq, "hdExtractedPredictions"
             )
             anno_files = sorted(glob.iglob("{:s}/*.json".format(curr_anno)))
             print("=> loading annotations from {:s}".format(curr_anno))
@@ -167,7 +173,7 @@ class Fdor(JointsDataset):
                         continue
 
                     for k, v in cameras.items():
-                        postfix = osp.basename(file).replace("body3DScene", "").replace("_", "")
+                        postfix = osp.basename(file).replace("prediction-", "")
                         image = osp.join(
                             seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + postfix
                         )

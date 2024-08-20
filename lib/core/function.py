@@ -441,9 +441,9 @@ def validate_3d(config, model, loader, epoch, output_dir, with_ssv=False):
                 if not config.NETWORK.TRAIN_ONLY_2D:
                     save_debug_3d_cubes(config, meta[0], grid_centers, prefix2)
                     save_debug_3d_images(config, meta[0], pred, prefix2)
-                # save_debug_3d_images_all(
-                #     config, meta, pred, inputs, targets_2d, heatmaps, prefix
-                # )
+                save_debug_3d_images_all(
+                    config, meta, pred, inputs, targets_2d, heatmaps, prefix
+                )
 
     metric = None
     if config.NETWORK.TRAIN_ONLY_2D:
