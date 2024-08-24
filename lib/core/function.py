@@ -248,15 +248,17 @@ def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
         input_heatmap,
     ) in enumerate(loader):
         data_time.update(time.time() - end)
-        gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
-        print("GPU memory usage {}: {:.2f} GB".format(i,gpu_memory_usage))
-        torch.cuda.empty_cache()
-        gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
-        print("GPU memory usage after free {}: {:.2f} GB".format(i,gpu_memory_usage))
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage {}: {:.2f} GB".format(i,gpu_memory_usage))
+        #torch.cuda.empty_cache()
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage after free {}: {:.2f} GB".format(i,gpu_memory_usage))
 
         if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or
                 "fdor" in config.DATASET.TEST_DATASET
         ):
+            if len(inputs) == 0:
+                continue
             if config.NETWORK.TRAIN_ONLY_2D:
                 loss_2d, heatmaps = model(
                     views=inputs,
@@ -441,9 +443,9 @@ def validate_3d(config, model, loader, epoch, output_dir, with_ssv=False):
                 if not config.NETWORK.TRAIN_ONLY_2D:
                     save_debug_3d_cubes(config, meta[0], grid_centers, prefix2)
                     save_debug_3d_images(config, meta[0], pred, prefix2)
-                save_debug_3d_images_all(
-                    config, meta, pred, inputs, targets_2d, heatmaps, prefix
-                )
+                #save_debug_3d_images_all(
+                #    config, meta, pred, inputs, targets_2d, heatmaps, prefix
+                #)
 
     metric = None
     if config.NETWORK.TRAIN_ONLY_2D:

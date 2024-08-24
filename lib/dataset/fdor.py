@@ -100,7 +100,7 @@ class Fdor(JointsDataset):
         if self.image_set == "train":
             self.sequence_list = TRAIN_LIST
             self._interval = 3
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+            cam_list = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
@@ -108,7 +108,7 @@ class Fdor(JointsDataset):
         elif self.image_set == "validation":
             self.sequence_list = VAL_LIST
             self._interval = 12
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+            cam_list = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index

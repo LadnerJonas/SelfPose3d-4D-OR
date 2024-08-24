@@ -34,15 +34,15 @@ class MultiPersonPoseNet(nn.Module):
         self.dataset_name = cfg.DATASET.TEST_DATASET
 
     def forward(self, views=None, meta=None, targets_2d=None, weights_2d=None, targets_3d=None, input_heatmaps=None):
-        if views is not None:
+        if views is not None and len(views) > 0:
             all_heatmaps = []
-            print("view count: ", len(views))
+            #print("view count: ", len(views))
             for view in views:
-                gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
-                print("GPU memory usage: {:.2f} GB".format(gpu_memory_usage))
-                torch.cuda.empty_cache()
-                gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
-                print("GPU memory usage after free: {:.2f} GB".format(gpu_memory_usage))
+                #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+                #print("GPU memory usage: {:.2f} GB".format(gpu_memory_usage))
+                #torch.cuda.empty_cache()
+                #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+                #print("GPU memory usage after free: {:.2f} GB".format(gpu_memory_usage))
                 heatmaps = self.backbone(view)
                 all_heatmaps.append(heatmaps)
         else:

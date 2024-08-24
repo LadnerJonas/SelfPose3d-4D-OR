@@ -29,6 +29,8 @@ import dataset
 import models
 from utils.vis import save_batch_heatmaps_multi, save_debug_3d_images_all
 
+from utils.vis import save_debug_images_multi
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train keypoints network')
@@ -46,9 +48,10 @@ def parse_args():
 def main():
     args = parse_args()
     with_ssv = args.with_ssv
-    vis_attn = args.vis_attn
+    #vis_attn = args.vis_attn
+    vis_attn = True
     cfg_name = os.path.basename(args.cfg).split('.')[0]
-    final_output_dir = os.path.join("./results_publ/", cfg_name)
+    final_output_dir = os.path.join("./results_publ2/", cfg_name)
     os.makedirs(final_output_dir, exist_ok=True)
     log_file = '{}_{}_{}.log'.format(cfg_name, time.strftime('%Y-%m-%d-%H-%M'),  'eval_map')
     final_log_file = os.path.join(final_output_dir, log_file)
@@ -101,6 +104,9 @@ def main():
     else:
         raise ValueError('Check the model file for testing!')
 
+    print(final_output_dir)
+    print(with_ssv)
+    print(vis_attn)
     model.eval()
     preds, roots = [], []
     with torch.no_grad():
@@ -109,7 +115,7 @@ def main():
                 if with_ssv:
                     if vis_attn:
                         #print(inputs)
-                        pred, _, grid_centers, attns = model(views1=inputs, meta1=meta, inference=True, visualize_attn=True)
+                        pred, heatmaps, grid_centers, attns = model(views1=inputs, meta1=meta, inference=True, visualize_attn=True)
                         #print(pred)
                         #print(grid_centers)
                         attn_output_dir = os.path.join(final_output_dir, 'attn_vis')
@@ -119,6 +125,10 @@ def main():
                             view_name = "view_{}".format(k + 1)
                             prefix = "{}_{:08}_{}".format(os.path.join(attn_output_dir, "valid"), i, view_name)
                             save_batch_heatmaps_multi(inputs[k], attns[k], "{}_hm_attn.jpg".format(prefix))
+
+                            save_debug_images_multi(
+                                config, inputs[k], meta[k], targets_2d[k], heatmaps[k], prefix
+                            )
                     else:
                         #print(i)
                         #print(inputs)

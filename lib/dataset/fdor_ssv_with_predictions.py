@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 
 TRAIN_LIST = [
     #"holistic_take1",
-    "holistic_take2",
+    #"holistic_take2",
     "holistic_take3",
     "holistic_take4",
-    #"holistic_take5",
+    "holistic_take5",
     #"holistic_take6",
     #"holistic_take7",
     #"holistic_take8",
@@ -37,10 +37,10 @@ TRAIN_LIST = [
 ]
 VAL_LIST = [
     #"holistic_take1",
-    #"holistic_take2",
+    "holistic_take2",
     #"holistic_take3",
     #"holistic_take4",
-    "holistic_take5",
+    #"holistic_take5",
 ]
 
 JOINTS_DEF = {
@@ -94,9 +94,9 @@ class FdorSSV_with_predictions(JointsDatasetSSV):
         ROOT = "./data"
         self.dataset_suffix = cfg.DATASET.SUFFIX if is_train else "sub"
         #self.camera_num_total = cfg.DATASET.CAMERA_NUM_TOTAL
-        self.camera_num_total = 2
+        self.camera_num_total = 6
         #self.cameras = cfg.DATASET.CAMERAS
-        self.cameras = [0,2,4]
+        self.cameras = [0,1,2,3,4,5]
         # Camera_num_total is set to 5. 
         # Cameras is a list referring to the camera index. e.g. [0,1,2,3,4] / [0,2,3]
         # We always read the same pickle, and then select the relevant data based on camera index
@@ -104,19 +104,19 @@ class FdorSSV_with_predictions(JointsDatasetSSV):
         if self.image_set == "train":
             self.sequence_list = TRAIN_LIST
             self._interval = 3
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+            cam_list = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
         elif self.image_set == "validation":
             self.sequence_list = VAL_LIST
             self._interval = 12
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+            cam_list = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
 
-        self.db_file = "group_{}_cam{}_{}.pkl".format(
+        self.db_file = "group_{}_cam{}_{}_with_predictions.pkl".format(
             self.image_set, self.camera_num_total, self.dataset_suffix
         )
         self.db_file = os.path.join(self.dataset_root, self.db_file)
@@ -147,6 +147,8 @@ class FdorSSV_with_predictions(JointsDatasetSSV):
     def _get_db(self):
         width = 2048
         height = 1536
+        #width = 1440
+        #height = 1080
         db = []
         for seq in self.sequence_list:
 
@@ -171,9 +173,12 @@ class FdorSSV_with_predictions(JointsDatasetSSV):
                     for k, v in cameras.items():
                         postfix = osp.basename(file).replace("prediction-", "")
                         image = osp.join(
+                        #    seq, "hdImgs-1440-1080", "camera{:02d}".format(k[1]) + "_colorimage-" + postfix
                             seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + postfix
                         )
                         image = image.replace("json", "jpg")
+                        if not osp.exists(osp.join(self.dataset_root, image)):
+                            continue
                         print(f"image for {k} and {v}")
                         print(image)
 

@@ -15,7 +15,7 @@ from copy import deepcopy
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from vedo import Points, Lines, Picture, show, screenshot
+from vedo import Points, Lines, show, screenshot, Image
 import torch
 import utils.cameras as cameras
 from utils.transforms import get_affine_transform as get_transform
@@ -250,11 +250,11 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                         lines_pred = Lines(pts_start, pts_end, c=COLORS[int(n % 10)])
                     else:
                         lines_pred += Lines(pts_start, pts_end, c=COLORS[int(n % 10)])
-            p1 = Picture(ims_pred[0]).rotateX(90).rotateY(0).rotateZ(100)
-            p2 = Picture(ims_pred[1]).rotateX(90).rotateY(0).rotateZ(80)
-            p3 = Picture(ims_pred[2]).rotateX(90).rotateX(0).rotateZ(0)
-            p4 = Picture(ims_pred[3]).rotateX(90).rotateY(0).rotateZ(80)
-            p5 = Picture(ims_pred[4]).rotateX(90).rotateY(0).rotateZ(100)
+            p1 = Image(ims_pred[0]).rotate_x(90).rotate_y(0).rotate_z(100)
+            p2 = Image(ims_pred[1]).rotate_x(90).rotate_y(0).rotate_z(80)
+            p3 = Image(ims_pred[2]).rotate_x(90).rotate_x(0).rotate_z(0)
+            p4 = Image(ims_pred[3]).rotate_x(90).rotate_y(0).rotate_z(80)
+            p5 = Image(ims_pred[4]).rotate_x(90).rotate_y(0).rotate_z(100)
             p1.z(1000).y(-2000).x(-2000).scale(1.3)
             p2.z(1000).y(0).x(-2000).scale(1.3)
             p3.z(1000).y(2000).x(-1000).scale(1.3)
@@ -318,11 +318,11 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                         cv2.circle(ims_gt[ii], pt1, 2, (255, 255, 255), 1, cv2.LINE_AA)
                         cv2.circle(ims_gt[ii], pt2, 2, (255, 255, 255), 1, cv2.LINE_AA)                    
 
-            p1 = Picture(ims_gt[0]).rotateX(90).rotateY(0).rotateZ(100)
-            p2 = Picture(ims_gt[1]).rotateX(90).rotateY(0).rotateZ(80)
-            p3 = Picture(ims_gt[2]).rotateX(90).rotateX(0).rotateZ(0)
-            p4 = Picture(ims_gt[3]).rotateX(90).rotateY(0).rotateZ(80)
-            p5 = Picture(ims_gt[4]).rotateX(90).rotateY(0).rotateZ(100)
+            p1 = Image(ims_gt[0]).rotate_x(90).rotate_y(0).rotate_z(100)
+            p2 = Image(ims_gt[1]).rotate_x(90).rotate_y(0).rotate_z(80)
+            p3 = Image(ims_gt[2]).rotate_x(90).rotate_x(0).rotate_z(0)
+            p4 = Image(ims_gt[3]).rotate_x(90).rotate_y(0).rotate_z(80)
+            p5 = Image(ims_gt[4]).rotate_x(90).rotate_y(0).rotate_z(100)
             p1.z(1000).y(-2000).x(-2000).scale(1.3)
             p2.z(1000).y(0).x(-2000).scale(1.3)
             p3.z(1000).y(2000).x(-1000).scale(1.3)

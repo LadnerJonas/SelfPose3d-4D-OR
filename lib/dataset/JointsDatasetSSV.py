@@ -382,6 +382,7 @@ class JointsDatasetSSV(Dataset):
             data_numpy = cv2.imread(image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
 
             if data_numpy is None:
+                print(f"data_numpy of {image_file} is None")
                 return (None,) * 12
 
             if self.color_rgb:

@@ -6,9 +6,9 @@ BACKBONE_MODEL: 'pose_resnet'
 MODEL: 'multi_person_posenet_ssv'
 DATA_DIR: ''
 GPUS: '0'
-OUTPUT_DIR: './results/4D-OR/'
-LOG_DIR: './results/4D-OR/'
-WORKERS: 1
+OUTPUT_DIR: './results/4D-OR-with-predictions/'
+LOG_DIR: './results/4D-OR-with-predictions-log/'
+WORKERS: 2
 PRINT_FREQ: 100
 WITH_SSV: True
 WITH_ATTN: True
@@ -20,8 +20,8 @@ L1_ATTN: True
 
 DATASET:
   COLOR_RGB: True
-  TRAIN_DATASET: 'fdor_ssv'
-  TEST_DATASET: 'fdor_without_annotations'
+  TRAIN_DATASET: 'fdor_ssv_with_predictions'
+  TEST_DATASET: 'fdor_with_predictions'
   DATA_FORMAT: jpg
   DATA_AUGMENTATION: False
   SUFFIX: "pseudo_hrnet_soft_9videos"
@@ -37,6 +37,13 @@ DATASET:
   TRAIN_SUBSET: 'train'
   ROOTIDX: 2
   CAMERA_NUM: 6
+  CAMERAS:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
 NETWORK:
   PRETRAINED_BACKBONE: "models/4D-OR/backbone_final.pth.tar"
   PRETRAINED:  ""  # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
@@ -101,17 +108,17 @@ MULTI_PERSON:
   SPACE_SIZE:
     - 8000.0
     - 8000.0
-    - 2000.0
+    - 3000.0
   SPACE_CENTER:
-    - 0.0 # 120.0
-    - -500.0 # -600.0
-    - 800.0
+    - 0.584 # 120.0
+    - 2.051 # -600.0
+    - -0.388
   INITIAL_CUBE_SIZE:
     - 80
     - 80
     - 20
-  MAX_PEOPLE_NUM: 10
-  THRESHOLD: 0.3
+  MAX_PEOPLE_NUM: 7
+  THRESHOLD: 0.25
 PICT_STRUCT:
   GRID_SIZE:
     - 2000.0

@@ -36,10 +36,10 @@ TRAIN_LIST = [
     #"holistic_take10",
 ]
 VAL_LIST = [
-    "holistic_take1",
+    #"holistic_take1",
     #"holistic_take2",
     #"holistic_take3",
-    #"holistic_take4",
+    "holistic_take4",
     #"holistic_take5",
 ]
 
@@ -106,7 +106,7 @@ class FdorWithoutAnnotations(JointsDataset):
         if self.image_set == "train":
             self.sequence_list = TRAIN_LIST
             self._interval = 3
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
+            cam_list = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
@@ -114,7 +114,7 @@ class FdorWithoutAnnotations(JointsDataset):
         elif self.image_set == "validation":
             self.sequence_list = VAL_LIST
             self._interval = 12
-            cam_list = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
+            cam_list = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
             self.cam_list = []
             for idx in self.cameras:
                 self.cam_list.append(cam_list[idx]) # select the camera based on camera index
@@ -128,7 +128,7 @@ class FdorWithoutAnnotations(JointsDataset):
             print("=> loading the pickle file = ", self.db_file)
             info = pickle.load(open(self.db_file, "rb"))
             print(self.sequence_list)
-            # assert info["sequence_list"] == self.sequence_list
+            assert info["sequence_list"] == self.sequence_list
             assert info["interval"] == self._interval
             # assert info["cam_list"] == self.cam_list
             print(ROOT)
@@ -152,6 +152,8 @@ class FdorWithoutAnnotations(JointsDataset):
     def _get_db(self):
         width = 2048
         height = 1536
+        #width = 1440
+        #height = 1080
         db = []
         for seq in self.sequence_list:
 
@@ -176,7 +178,8 @@ class FdorWithoutAnnotations(JointsDataset):
 
                 for k, v in cameras.items():
                     image = osp.join(
-                        seq, "hdImgs", "camera{:02d}".format(k[1]) + "_colorimage-" + str(i).zfill(6) + ".jpg"
+                        seq, "hdImgs", "camera{:02d}".format(k[1]+1) + "_colorimage-" + str(i).zfill(6) + ".jpg"
+                    #    seq, "hdImgs-1440-1080", "camera{:02d}".format(k[1]) + "_colorimage-" + str(i).zfill(6) + ".jpg"
                     )
                     if not osp.exists(osp.join(self.dataset_root, image)):
                         continue
@@ -296,7 +299,7 @@ class FdorWithoutAnnotations(JointsDataset):
             [],
             [],
         )
-        for k in range(self.num_views):
+        for k in range(self.camera_num_total):
             i, t, w, t3, m, ih = super().__getitem__(self.camera_num_total * idx + self.cameras[k])
             if i is None:
                 print(f"error: {self.camera_num_total * idx + self.cameras[k]}, {self.camera_num_total} {idx} {self.cameras[k]} {k}")
