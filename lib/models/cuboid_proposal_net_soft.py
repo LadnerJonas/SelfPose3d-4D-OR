@@ -129,7 +129,18 @@ class CuboidProposalNetSoft(nn.Module):
         # with torch.no_grad():
         # self.v2v_net.eval()
         if self.rootnet_roothm:
-            all_heatmaps_copy = [a[:, self.root_id, :, :][:, None].clone() for a in all_heatmaps]
+            all_heatmaps_copy = []
+
+            for a in all_heatmaps:
+                if isinstance(self.root_id, int):
+                    # If root_id is a single integer, proceed as before
+                    heatmap = a[:, self.root_id, :, :][:, None].clone()
+                else:
+                    # If root_id is an array, we need to interpolate between the heatmaps
+                    selected_heatmaps = a[:, self.root_id, :, :].clone()  # Select the heatmaps corresponding to the root_ids
+                    heatmap = selected_heatmaps.mean(dim=1, keepdim=True)  # Average across the selected heatmaps
+
+                all_heatmaps_copy.append(heatmap)
         else:
             all_heatmaps_copy = all_heatmaps
 
@@ -253,9 +264,19 @@ class CuboidProposalNetSoft(nn.Module):
                 return root_cubes_main, None, None, grid_centers
         else:
             if self.rootnet_roothm:
-                all_heatmaps_copy = [
-                    a[:, self.root_id, :, :][:, None].clone() for a in all_heatmaps
-                ]
+                all_heatmaps_copy = []
+
+                for a in all_heatmaps:
+                    if isinstance(self.root_id, int):
+                        # If root_id is a single integer, proceed as before
+                        heatmap = a[:, self.root_id, :, :][:, None].clone()
+                    else:
+                        # If root_id is an array, we need to interpolate between the heatmaps
+                        selected_heatmaps = a[:, self.root_id, :, :].clone()  # Select the heatmaps corresponding to the root_ids
+                        heatmap = selected_heatmaps.mean(dim=1, keepdim=True)  # Average across the selected heatmaps
+
+                    all_heatmaps_copy.append(heatmap)
+
             else:
                 all_heatmaps_copy = all_heatmaps
 
@@ -273,4 +294,3 @@ class CuboidProposalNetSoft(nn.Module):
             grid_centers = self.proposal_layer(root_cubes, meta, grids)
 
             return root_cubes, None, None, grid_centers
-

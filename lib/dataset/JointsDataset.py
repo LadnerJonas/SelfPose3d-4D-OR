@@ -150,8 +150,8 @@ class JointsDataset(Dataset):
             flags=cv2.INTER_LINEAR)
         if self.apply_rand_aug:
             input = copy.deepcopy(np.asarray(self.rand_augment(Image.fromarray(input))))
-        
-        
+
+
         if self.transform:
             input = self.transform(input)
 
@@ -165,20 +165,20 @@ class JointsDataset(Dataset):
                             joints[n][i, 1] >= self.image_size[1]):
                         joints_vis[n][i, :] = 0
 
-        # if 'pred_pose2d' in db_rec and db_rec['pred_pose2d'] != None:
+        if 'pred_pose2d' in db_rec and db_rec['pred_pose2d'] != None:
         #     # For convenience, we use predicted poses and corresponding values at the original heatmaps
         #     # to generate 2d heatmaps for Campus and Shelf dataset.
         #     # You can also use other 2d backbone trained on COCO to generate 2d heatmaps directly.
-        #     pred_pose2d = db_rec['pred_pose2d']
-        #     for n in range(len(pred_pose2d)):
-        #         for i in range(len(pred_pose2d[n])):
-        #             pred_pose2d[n][i, 0:2] = affine_transform(pred_pose2d[n][i, 0:2], trans)
+            pred_pose2d = db_rec['pred_pose2d']
+            for n in range(len(pred_pose2d)):
+                for i in range(len(pred_pose2d[n])):
+                    pred_pose2d[n][i, 0:2] = affine_transform(pred_pose2d[n][i, 0:2], trans)
 
-        #     input_heatmap = self.generate_input_heatmap(pred_pose2d)
-        #     input_heatmap = torch.from_numpy(input_heatmap)
-        # else:
-        #     input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
-        input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
+            input_heatmap = self.generate_input_heatmap(pred_pose2d)
+            input_heatmap = torch.from_numpy(input_heatmap)
+        else:
+            input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
+        #input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
 
         target_heatmap, target_weight = self.generate_target_heatmap(
             joints, joints_vis)
@@ -406,7 +406,3 @@ class JointsDataset(Dataset):
                 target = np.clip(target, 0, 1)
 
         return target
-
-
-
-

@@ -61,7 +61,7 @@ def main():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     console = logging.StreamHandler()
-    logging.getLogger('').addHandler(console)                        
+    logging.getLogger('').addHandler(console)
 
     #gpus = [int(i) for i in config.GPUS.split(',')]
     gpus = [0]
@@ -150,8 +150,14 @@ def main():
             for b in range(pred.shape[0]):
                 preds.append(pred[b])
                 roots.append(root[b])
+        if 'voxelpose' in config.DATASET.TEST_DATASET:
+            actor_pcp, avg_pcp, _, recall = test_dataset.evaluate(preds)
+            msg = '     | Actor 1 | Actor 2 | Actor 3 | Average | \n' \
+                  ' PCP |  {pcp_1:.2f}  |  {pcp_2:.2f}  |  {pcp_3:.2f}  |  {pcp_avg:.2f}  |\t Recall@500mm: {recall:.4f}'.format(
+                pcp_1=actor_pcp[0] * 100, pcp_2=actor_pcp[1] * 100, pcp_3=actor_pcp[2] * 100, pcp_avg=avg_pcp * 100, recall=recall)
+            print(msg)
 
-        if 'panoptic' in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET:
+        elif 'panoptic' in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET:
             mpjpe_threshold = np.arange(25, 155, 25)
             aps_all, recs_all, mpjpe_all, avg_recall_all = test_dataset.evaluate(preds, roots, final_output_dir)
             types_eval = ["pose", "root"]

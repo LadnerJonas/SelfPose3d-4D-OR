@@ -11,3 +11,4 @@ easydict
 PyYAML
 tensorboardX
 vedo
+open3d

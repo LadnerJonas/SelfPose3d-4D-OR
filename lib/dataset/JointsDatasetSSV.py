@@ -79,7 +79,7 @@ class JointsDatasetSSV(Dataset):
         else: # during validation, no augmentation
             self.rand_augment = RandomAugumnetCutOut(apply_cutout=False)
             self.apply_rand_aug = False
-        
+
         self.color_rgb = cfg.DATASET.COLOR_RGB
         image_size_orig = np.array(cfg.NETWORK.IMAGE_SIZE_ORIG)
         self.height_orig = image_size_orig[1]
@@ -93,6 +93,7 @@ class JointsDatasetSSV(Dataset):
         self.joints_weight = 1
 
         self.transform = transform
+        print(f"JDSSV transform is none: {self.transform is None}")
         self.db = []
         self.debug = False
         self.mis_count = 0
@@ -116,6 +117,29 @@ class JointsDatasetSSV(Dataset):
         print(f"length of db {len(self.db)} in JointsDatasetSSV and num views: {self.num_views}")
         print(self.db)
         return len(self.db)
+
+    def calculate_min_vis_roots(self, joints_vis_list, root_ids, min_views_check):
+        # Handle the case where root_ids is an array
+        if isinstance(root_ids, (list, np.ndarray)):
+            roots = np.sort(
+                np.array(
+                    [
+                        np.any(np.array(p)[:, root_ids], axis=1).astype(np.int32).sum(axis=1).mean()
+                        for p in joints_vis_list
+                    ]
+                )
+            )[-min_views_check :]
+        else:
+            roots = np.sort(
+                np.array(
+                    [
+                        np.any(np.array(p)[:, root_ids], axis=1).astype(np.int32).sum()
+                        for p in joints_vis_list
+                    ]
+                )
+            )[-min_views_check :]
+
+        return roots.sum() / min_views_check
 
     def __getitem__(self, idx):
         (
@@ -233,6 +257,7 @@ class JointsDatasetSSV(Dataset):
                     continue
                 index = self.camera_num_total * idx + self.cameras[k]
                 if index >= len(self.db):
+                    print(f"index {index} is greater than len of db {len(self.db)}, skipping {self.camera_num_total} * {idx} + {self.cameras[k]}")
                     continue
                 db_rec = deepcopy(self.db[index])
                 db_rec["camera"]["f"] = np.array([db_rec["camera"]["fx"], db_rec["camera"]["fy"]])[
@@ -315,25 +340,10 @@ class JointsDatasetSSV(Dataset):
             c1 = np.all(np.array([len(p) for p in joints_vis1_list]) > 0)
             c2 = np.all(np.array([len(p) for p in joints_vis2_list]) > 0)
             c3 = np.all(np.array([len(p) for p in joints_vis3_list]) > 0)
-            if c1 and c2 and c3: 
-                roots1 = np.sort(
-                    np.array(
-                        [
-                            np.any(np.array(p)[:, self.root_id], 1).astype(np.int32).sum()
-                            for p in joints_vis1_list
-                        ]
-                    )
-                )[-self.min_views_check :]
-                roots2 = np.sort(
-                    np.array(
-                        [
-                            np.any(np.array(p)[:, self.root_id], 1).astype(np.int32).sum()
-                            for p in joints_vis2_list
-                        ]
-                    )
-                )[-self.min_views_check :]
-                min_vis_roots1 = roots1.sum() / self.min_views_check
-                min_vis_roots2 = roots2.sum() / self.min_views_check
+            if c1 and c2 and c3:
+                min_vis_roots1 = self.calculate_min_vis_roots(joints_vis1_list, self.root_id, self.min_views_check)
+                min_vis_roots2 = self.calculate_min_vis_roots(joints_vis2_list, self.root_id, self.min_views_check)
+
                 npers_allviews = np.max(npersons_list)
 
                 if int(npers_allviews) == int(min_vis_roots1) and int(npers_allviews) == int(
@@ -341,14 +351,14 @@ class JointsDatasetSSV(Dataset):
                 ):
                     break
                 else:
-                    print(f"{int(npers_allviews) == int(min_vis_roots1)} and {int(npers_allviews) == int(min_vis_roots2)}")
-                    print(f"miss {idx}")
+                    #print(f"{int(npers_allviews) == int(min_vis_roots1)} and {int(npers_allviews) == int(min_vis_roots2)}")
+                    #print(f"miss {idx}")
                     idx = np.random.randint(0, max((len(self) / self.num_views) - self.num_views, 1))
-                    print(f"new idx {idx}")
+                    #print(f"new idx {idx}")
                     self.mis_count += 1
             else:
                 idx = np.random.randint(0,  max((len(self) / self.num_views) - self.num_views, 1))
-                self.mis_count += 1                
+                self.mis_count += 1
 
 
         for k in range(self.num_views):
@@ -379,6 +389,7 @@ class JointsDatasetSSV(Dataset):
                 nposes = self.maximum_person
 
             image_file = db_rec["image"]
+            #print(f"image_file {image_file}")
             data_numpy = cv2.imread(image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
 
             if data_numpy is None:

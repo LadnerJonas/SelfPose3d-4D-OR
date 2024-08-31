@@ -227,7 +227,11 @@ def main():
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, config.TRAIN.LR_STEP, config.TRAIN.LR_FACTOR, last_epoch=last_epoch
     )
+    gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+    print("GPU memory usage: {:.2f} GB (init before cache clear)".format(gpu_memory_usage))
     torch.cuda.empty_cache()
+    gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+    print("GPU memory usage: {:.2f} GB (init after cache clear".format(gpu_memory_usage))
 
     for epoch in range(start_epoch, end_epoch):
         print("Epoch: {}".format(epoch))

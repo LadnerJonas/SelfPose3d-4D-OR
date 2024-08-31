@@ -183,7 +183,7 @@ class MultiPersonPoseNetSSV(nn.Module):
                 best_loss = d_matrix[matches_x, matches_y].sum()
                 idx = nv * num_batch + bs
                 losses[idx] = best_loss
-        
+
         if self.L1_ATTN:
             mask = torch.ones(num_view * num_batch, device=device)
             mask[torch.argmax(losses)] = 0.
@@ -222,15 +222,21 @@ class MultiPersonPoseNetSSV(nn.Module):
             return self.do_inference(views=views1, meta=meta1, input_heatmaps=input_heatmaps1, visualize_attn=visualize_attn)
         FLIP_LR_JOINTS15 = [0, 1, 2, 9, 10, 11, 12, 13, 14, 3, 4, 5, 6, 7, 8]
 
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (multi person posenet forward 1)".format(gpu_memory_usage))
         # view3 is only for root_net training, it won't go through affine augmentation
         if views3 is not None:
             all_heatmaps3 = []
             for view in views3:
                 heatmaps3 = self.backbone(view)
-                all_heatmaps3.append(heatmaps3)
+                #all_heatmaps3.append(heatmaps3)
+                all_heatmaps3.append(heatmaps3.cpu())
+                del heatmaps3
         else:
             all_heatmaps3 = input_heatmaps3
 
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (multi person posenet forward views3)".format(gpu_memory_usage))
         if self.WITH_ATTN:
             if views1 is not None:
                 attns1 = []
@@ -246,15 +252,19 @@ class MultiPersonPoseNetSSV(nn.Module):
                 all_heatmaps1 = []
                 for view in views1:
                     heatmaps = self.backbone(view)
-                    all_heatmaps1.append(heatmaps)
+                    #all_heatmaps1.append(heatmaps)
+                    all_heatmaps1.append(heatmaps.cpu().detach())
+                    del heatmaps
             else:
                 all_heatmaps1 = input_heatmaps1
-            
+
             if views2 is not None:
                 all_heatmaps2 = []
                 for view in views2:
                     heatmaps2 = self.backbone(view)
-                    all_heatmaps2.append(heatmaps2)
+                    #all_heatmaps2.append(heatmaps2)
+                    all_heatmaps2.append(heatmaps2.cpu().detach())
+                    del heatmaps2
             else:
                 all_heatmaps2 = input_heatmaps2
         else:
@@ -265,7 +275,7 @@ class MultiPersonPoseNetSSV(nn.Module):
                     all_heatmaps1.append(heatmaps)
             else:
                 all_heatmaps1 = input_heatmaps1
-            
+
             if views2 is not None:
                 all_heatmaps2 = []
                 for view in views2:
@@ -274,7 +284,11 @@ class MultiPersonPoseNetSSV(nn.Module):
             else:
                 all_heatmaps2 = input_heatmaps2
 
-        device = all_heatmaps1[0].device
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (multi person posenet forward heatmaps)".format(gpu_memory_usage))
+
+        #device = all_heatmaps1[0].device
+        device = 'cuda:0'
         batch_size = views1[0].shape[0]
 
         losses = {}
@@ -282,13 +296,16 @@ class MultiPersonPoseNetSSV(nn.Module):
             targets_2d1 = torch.cat([t[None] for t in targets_2d1])
             targets_2d2 = torch.cat([t[None] for t in targets_2d2])
             targets_2d3 = torch.cat([t[None] for t in targets_2d3])
-            loss_2d1 = F.mse_loss(targets_2d1, torch.cat([a[None] for a in all_heatmaps1]))
-            loss_2d2 = F.mse_loss(targets_2d2, torch.cat([a[None] for a in all_heatmaps2]))
-            loss_2d3 = F.mse_loss(targets_2d3, torch.cat([a[None] for a in all_heatmaps3]))
+            loss_2d1 = F.mse_loss(targets_2d1, torch.cat([a.to('cuda:0')[None] for a in all_heatmaps1]))
+            loss_2d2 = F.mse_loss(targets_2d2, torch.cat([a.to('cuda:0')[None] for a in all_heatmaps2]))
+            loss_2d3 = F.mse_loss(targets_2d3, torch.cat([a.to('cuda:0')[None] for a in all_heatmaps3]))
             losses["loss_2d"] = (loss_2d1 + loss_2d2 + loss_2d3) / 3.0
         else:
             losses["loss_2d"] = self.backbone(torch.zeros(1, 3, 512, 960, device=device)).mean() * 0.0
         # return None, all_heatmaps3, None, losses
+
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (multi person posenet forward after loss)".format(gpu_memory_usage))
 
         # fix later
         if self.train_only_2d:
@@ -304,7 +321,7 @@ class MultiPersonPoseNetSSV(nn.Module):
                 grid_centers[i, : num_person[i], 4] = 1.0
         else:
             if self.freeze_rootnet:
-                _, _, _, grid_centers = self.root_net(all_heatmaps3, meta3, flip_xcoords=meta3[0]["hflip"])
+                _, _, _, grid_centers = self.root_net([a.to('cuda:0') for a in all_heatmaps3], meta3, flip_xcoords=meta3[0]["hflip"])
             else:
                 if self.rootnet_train_synth:
                     root_cubes_main1, root_cubes_syn1, target_cubes1, _ = self.root_net(
@@ -339,12 +356,12 @@ class MultiPersonPoseNetSSV(nn.Module):
 
         if epoch >= self.init_train_epochs_rootnet:
             if self.single_aug_training_posenet:
-                loss_pose3d_ssv1 = F.mse_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
+                loss_pose3d_ssv1 = F.smooth_l1_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
                 pred1 = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
                 pred1[:, :, :, 3:] = grid_centers[:, :, 3:].reshape(batch_size, -1, 1, 2)
             else:
-                loss_pose3d_ssv1 = F.mse_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
-                loss_pose3d_ssv2 = F.mse_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
+                loss_pose3d_ssv1 = F.smooth_l1_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
+                loss_pose3d_ssv2 = F.smooth_l1_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
                 pred1 = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
                 pred2 = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
                 pred1[:, :, :, 3:] = grid_centers[:, :, 3:].reshape(batch_size, -1, 1, 2)
@@ -360,27 +377,34 @@ class MultiPersonPoseNetSSV(nn.Module):
                             grid_centers[:, n],
                             flip_xcoords=meta1[0]["hflip"],
                         )
-                        pred1[:, n, :, 0:3] = single_pose1               
+                        pred1[:, n, :, 0:3] = single_pose1
             else:
                 for n in range(self.num_cand):
                     index1 = pred1[:, n, 0, 3] >= 0
                     index2 = pred2[:, n, 0, 3] >= 0
+                    #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+                    #print("GPU memory usage: {:.2f} GB (multi person posenet before single pose)".format(gpu_memory_usage), f"({n}/{self.num_cand})")
                     if torch.sum(index1) > 0:
                         single_pose1 = self.pose_net(
-                            all_heatmaps1,
+                            [a.to('cuda:0') for a in all_heatmaps1],
                             meta1,
                             grid_centers[:, n],
                             flip_xcoords=meta1[0]["hflip"],
                         )
-                        pred1[:, n, :, 0:3] = single_pose1
+                        single_pose1_cpu = single_pose1.cpu().detach()
+                        del single_pose1
+                        pred1[:, n, :, 0:3] = single_pose1_cpu
+
                     if torch.sum(index2) > 0:
                         single_pose2 = self.pose_net(
-                            all_heatmaps2,
+                            [a.to('cuda:0') for a in all_heatmaps2],
                             meta2,
                             grid_centers[:, n],
                             flip_xcoords=meta2[0]["hflip"],
                         )
-                        pred2[:, n, :, 0:3] = single_pose2
+                        single_pose2_cpu = single_pose2.cpu().detach()
+                        del single_pose2
+                        pred2[:, n, :, 0:3] = single_pose2_cpu
 
             if self.single_aug_training_posenet:
                 pred2_out = pred1.detach().clone()
@@ -405,10 +429,10 @@ class MultiPersonPoseNetSSV(nn.Module):
                 # kps_2d_22 = [cameras.project_pose_batch(pred2, cam, trans2) for cam in cameras2] # not that interesting
                 # print("pred1", [p.shape for p in pred1])
                 # print("pred2", [p.shape for p in pred2])
-            
+
             if self.single_aug_training_posenet:
                 if pred1[0].shape[0] > 0:
-                    kps_2d_11 = [cameras.project_pose_batch(pred1, cam, trans1) for cam in proj_cameras]    
+                    kps_2d_11 = [cameras.project_pose_batch(pred1, cam, trans1) for cam in proj_cameras]
                     heatmaps_all_11 = []
                     for kps_views1 in kps_2d_11:
                         hm_b = []
@@ -419,25 +443,25 @@ class MultiPersonPoseNetSSV(nn.Module):
                             heatmaps = torch.exp(-(((xx - x) / 3.0) ** 2) / 2 - (((yy - y) / 3.0) ** 2) / 2)
                             heatmaps = torch.clip(torch.sum(heatmaps, 0), min=0.0, max=1.0)[None]
                             hm_b.append(heatmaps)
-                        heatmaps_all_11.append(torch.cat(hm_b, 0)[None])     
+                        heatmaps_all_11.append(torch.cat(hm_b, 0)[None])
                     heatmaps_all_11 = torch.cat(heatmaps_all_11, 0)
 
                     if targets_2d1 is not None:
-                        loss_pose3d_ssv1 = F.mse_loss(targets_2d1, heatmaps_all_11)
-                    losses["loss_pose3d_ssv"] = loss_pose3d_ssv1                                                    
+                        loss_pose3d_ssv1 = F.smooth_l1_loss(targets_2d1, heatmaps_all_11)
+                    losses["loss_pose3d_ssv"] = loss_pose3d_ssv1
                 else:
                     losses["loss_pose3d_ssv"] = self.pose_net.v2v_net(self.zero_tensor_posenet).mean() * 0.0
             else:
                 if pred1[0].shape[0] > 0 and pred2[0].shape[0] > 0:
                     kps_2d_12 = [
-                        cameras.project_pose_batch(pred1, cam, trans2) for cam in proj_cameras
+                        cameras.project_pose_batch([p.to('cuda:0') for p in pred1], cam, trans2) for cam in proj_cameras
                     ]  # project the 3D poses to MV2
                     kps_2d_21 = [
-                        cameras.project_pose_batch(pred2, cam, trans1) for cam in proj_cameras
+                        cameras.project_pose_batch([p.to('cuda:0') for p in pred2], cam, trans1) for cam in proj_cameras
                     ]  # project the 3D poses to MV1
                     # 2.0 check 2D coords for each view with ground truth (easy check; i guess it is good)
                     # 3.0 generate heatmaps from these coords (see sspose) I hope this is differential
-                    
+
                     heatmaps_all_21, heatmaps_all_12 = [], []
                     for kps_views1 in kps_2d_21:
                         hm_b = []
@@ -466,22 +490,22 @@ class MultiPersonPoseNetSSV(nn.Module):
 
                     if targets_2d1 is not None:
                         if self.WITH_ATTN:
-                            loss_pose3d_ssv1 = (F.mse_loss(targets_2d1, heatmaps_all_21, reduction='none') * attns1).mean()
+                            loss_pose3d_ssv1 = (F.smooth_l1_loss(targets_2d1, heatmaps_all_21, reduction='none') * attns1).mean()
                         else:
-                            loss_pose3d_ssv1 = F.mse_loss(targets_2d1, heatmaps_all_21)
+                            loss_pose3d_ssv1 = F.smooth_l1_loss(targets_2d1, heatmaps_all_21)
                     if targets_2d2 is not None:
                         if self.WITH_ATTN:
-                            loss_pose3d_ssv2 = (F.mse_loss(targets_2d2, heatmaps_all_12, reduction='none') * attns2).mean()
+                            loss_pose3d_ssv2 = (F.smooth_l1_loss(targets_2d2, heatmaps_all_12, reduction='none') * attns2).mean()
                         else:
-                            loss_pose3d_ssv2 = F.mse_loss(targets_2d2, heatmaps_all_12)
+                            loss_pose3d_ssv2 = F.smooth_l1_loss(targets_2d2, heatmaps_all_12)
                     losses["loss_pose3d_ssv"] = loss_pose3d_ssv1 + loss_pose3d_ssv2
-                    
+
                     if self.WITH_ATTN:
                         attns1_gt = torch.ones_like(attns1, device=device)
                         attns2_gt = torch.ones_like(attns2, device=device)
                         # attns1.shape: [5,1,15,128,240]
-                        losses['loss_attn_ssv'] = (F.mse_loss(attns1, attns1_gt) + F.mse_loss(attns2, attns2_gt)) * self.attn_weight
-                    
+                        losses['loss_attn_ssv'] = (F.smooth_l1_loss(attns1, attns1_gt) + F.smooth_l1_loss(attns2, attns2_gt)) * self.attn_weight
+
                     if self.USE_L1 and epoch >= self.L1_EPOCH:
                         losses['loss_pose3d_l1_ssv'] = (self.l1_matching_loss(kps_2d_12, meta2) + self.l1_matching_loss(kps_2d_21, meta1)) * self.L1_WEIGHT
                 else:
@@ -489,7 +513,7 @@ class MultiPersonPoseNetSSV(nn.Module):
                         attns1_gt = torch.ones_like(attns1, device=device)
                         attns2_gt = torch.ones_like(attns2, device=device)
                         # attns1.shape: [5,1,15,128,240]
-                        losses['loss_attn_ssv'] = (F.mse_loss(attns1, attns1_gt) + F.mse_loss(attns2, attns2_gt)) * 0.0
+                        losses['loss_attn_ssv'] = (F.smooth_l1_loss(attns1, attns1_gt) + F.smooth_l1_loss(attns2, attns2_gt)) * 0.0
                     if self.USE_L1 and epoch >= self.L1_EPOCH:
                         l1_losses = torch.zeros(5, device=device).mean()
                         losses['loss_pose3d_l1_ssv'] = l1_losses * 0.0

@@ -71,6 +71,11 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
 
         if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or
                 "campus" in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET):
+            #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+            #print("GPU memory usage: {:.2f} GB (train_3d_ssv before cache clear)".format(gpu_memory_usage))
+            #torch.cuda.empty_cache()
+            #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+            #print("GPU memory usage: {:.2f} GB (train_3d_ssv after cache clear".format(gpu_memory_usage))
             pred2, heatmaps3, grid_centers, loss_dict = model(
                 views1=inputs1,
                 meta1=meta1,
@@ -119,7 +124,7 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
         end = time.time()
 
         if i % config.PRINT_FREQ == 0:
-            gpu_memory_usage = torch.cuda.memory_allocated(0)
+            gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
             msg = (
                 "Epoch: [{0}][{1}/{2}]\t"
                 "Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t"

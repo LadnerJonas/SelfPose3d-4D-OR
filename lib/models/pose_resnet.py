@@ -189,15 +189,41 @@ class PoseResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x, attn=False):
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward 1)".format(gpu_memory_usage))
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
 
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward 2)".format(gpu_memory_usage))
+
+        #torch.cuda.empty_cache()
+
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward 3)".format(gpu_memory_usage))
+
         x = self.layer1(x)
+        #torch.cuda.empty_cache()
+
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward l1)".format(gpu_memory_usage))
         x = self.layer2(x)
+        #torch.cuda.empty_cache()
+
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward l2)".format(gpu_memory_usage))
         x = self.layer3(x)
+        #torch.cuda.empty_cache()
+
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward l3)".format(gpu_memory_usage))
         x = self.layer4(x)
+        #torch.cuda.empty_cache()
+
+        #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
+        #print("GPU memory usage: {:.2f} GB (posenet forward l4)".format(gpu_memory_usage))
 
         x = self.deconv_layers(x)
         out = self.final_layer(x)
@@ -279,7 +305,8 @@ def get_pose_net(cfg, is_train, **kwargs):
     model = PoseResNet(block_class, layers, cfg, **kwargs)
 
     if is_train:
-        model.init_weights(cfg.NETWORK.PRETRAINED, mapping=cfg.COCO_TO_PANOPTIC_MAPPING)
+        #model.init_weights(cfg.NETWORK.PRETRAINED, mapping=cfg.COCO_TO_PANOPTIC_MAPPING)
+        model.init_weights(cfg.NETWORK.PRETRAINED)
 
     return model
 
@@ -289,12 +316,12 @@ class PoseResAttnNet(nn.Module):
         super(PoseResAttnNet, self).__init__()
         self.backbone = PoseResNet(block, layers, cfg, **kwargs)
         self.sigmoid = nn.Sigmoid()
-    
+
     def forward(self, x):
         out = self.backbone(x)
         out = self.sigmoid(out)
         return out
-    
+
     def init_weights(self, pretrained="", mapping=None):
         self.backbone.init_weights(pretrained, mapping)
 
@@ -312,13 +339,13 @@ class PoseResAttnSharedNet(nn.Module):
             stride=1,
             padding=1 if cfg.POSE_RESNET.FINAL_CONV_KERNEL == 3 else 0,
         )
-    
+
     def forward(self, x):
         out = self.final_layer(x)
         # out = self.sigmoid(out)
         out = self.relu(out)
         return out
-    
+
 
 def get_pose_attn_net(cfg, is_train, **kwargs):
     num_layers = cfg.ATTN_NUM_LAYERS
