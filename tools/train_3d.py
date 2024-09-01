@@ -15,6 +15,7 @@ import torch.backends.cudnn as cudnn
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
+from torch import autograd
 from tensorboardX import SummaryWriter
 import argparse
 import os
@@ -232,6 +233,8 @@ def main():
     torch.cuda.empty_cache()
     gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
     print("GPU memory usage: {:.2f} GB (init after cache clear".format(gpu_memory_usage))
+
+    #torch.autograd.set_detect_anomaly(True)
 
     for epoch in range(start_epoch, end_epoch):
         print("Epoch: {}".format(epoch))

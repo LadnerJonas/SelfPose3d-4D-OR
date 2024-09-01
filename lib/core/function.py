@@ -138,7 +138,7 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
                 "loss_attn_ssv: {loss_attn_ssv.val:.6f} ({loss_attn_ssv.avg:.6f})\t"
                 "loss_pose3d_l1_ssv: {loss_pose3d_l1_ssv.val:.6f} ({loss_pose3d_l1_ssv.avg:.6f})\t"
                 "missed countes: {mis_count}\t"
-                "Memory {memory:.1f}".format(
+                "Memory {memory:.1f} GB".format(
                     epoch,
                     i,
                     len(loader),
@@ -300,6 +300,7 @@ def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
             losses.update(loss.item())
 
         optimizer.zero_grad()
+        #torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         loss.backward()
         optimizer.step()
 

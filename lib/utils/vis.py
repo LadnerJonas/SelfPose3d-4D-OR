@@ -218,7 +218,7 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                     # project 3D points to 2D
                     for ii, mt in enumerate(meta):
                         center = meta[ii]['center'][i]
-                        scale = meta[ii]['scale'][i]                        
+                        scale = meta[ii]['scale'][i]
                         width, height = center * 2
                         trans = torch.as_tensor(
                             get_transform(center, scale, meta[ii]['rotation'][i].item(), img_size),
@@ -233,8 +233,8 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                         for k in eval("LIMBS{}".format(len(joints))):
                             pt1 = int(kpt2d[k[0], 0]), int(kpt2d[k[0], 1])
                             pt2 = int(kpt2d[k[1], 0]), int(kpt2d[k[1], 1])
-                            cv2.line(ims_pred[ii], pt1, pt2, 
-                                    [a*255 for a in colors.to_rgb(COLORS[int(n % 10)])], 
+                            cv2.line(ims_pred[ii], pt1, pt2,
+                                    [a*255 for a in colors.to_rgb(COLORS[int(n % 10)])],
                                     3, cv2.LINE_AA)
                             cv2.circle(ims_pred[ii], pt1, 2, (255, 255, 255), 2, cv2.LINE_AA)
                             cv2.circle(ims_pred[ii], pt2, 2, (255, 255, 255), 2, cv2.LINE_AA)
@@ -312,11 +312,11 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                     for k in eval("LIMBS{}".format(len(joints))):
                         pt1 = int(kpt2d[k[0], 0]), int(kpt2d[k[0], 1])
                         pt2 = int(kpt2d[k[1], 0]), int(kpt2d[k[1], 1])
-                        cv2.line(ims_gt[ii], pt1, pt2, 
-                                [a*255 for a in colors.to_rgb(COLORS[int(n % 10)])], 
+                        cv2.line(ims_gt[ii], pt1, pt2,
+                                [a*255 for a in colors.to_rgb(COLORS[int(n % 10)])],
                                 1, cv2.LINE_AA)
                         cv2.circle(ims_gt[ii], pt1, 2, (255, 255, 255), 1, cv2.LINE_AA)
-                        cv2.circle(ims_gt[ii], pt2, 2, (255, 255, 255), 1, cv2.LINE_AA)                    
+                        cv2.circle(ims_gt[ii], pt2, 2, (255, 255, 255), 1, cv2.LINE_AA)
 
             p1 = Image(ims_gt[0]).rotate_x(90).rotate_y(0).rotate_z(100)
             p2 = Image(ims_gt[1]).rotate_x(90).rotate_y(0).rotate_z(80)
@@ -353,8 +353,8 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                     roll=15,
                     zoom=1.5,
                     size=(1920, 1080)
-                ).close()           
-            
+                ).close()
+
 
 def save_debug_3d_images(config, meta, preds, prefix):
     if not config.DEBUG.DEBUG:
@@ -463,12 +463,15 @@ def save_debug_3d_cubes(config, meta, root, prefix):
         y = roots_gt[:num_person, 1].cpu()
         z = roots_gt[:num_person, 2].cpu()
         ax.scatter(x, y, z, c="r")
+        print("roots-gt:",x,y,z)
 
         index = roots_pred[:, 3] >= 0
         x = roots_pred[index, 0].cpu()
         y = roots_pred[index, 1].cpu()
         z = roots_pred[index, 2].cpu()
         ax.scatter(x, y, z, c="b")
+        print("roots-pred:",x,y,z)
+        print("roots-pred:",roots_pred)
 
         space_size = config.MULTI_PERSON.SPACE_SIZE
         space_center = config.MULTI_PERSON.SPACE_CENTER

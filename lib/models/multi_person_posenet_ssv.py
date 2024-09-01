@@ -331,7 +331,7 @@ class MultiPersonPoseNetSSV(nn.Module):
                         all_heatmaps2, meta2, flip_xcoords=meta2[0]["hflip"]
                     )
                     root_cubes_main3, root_cubes_syn3, target_cubes3, grid_centers = self.root_net(
-                        all_heatmaps3, meta3, flip_xcoords=meta3[0]["hflip"]
+                        [a.to('cuda:0') for a in all_heatmaps3], meta3, flip_xcoords=meta3[0]["hflip"]
                     )
                     loss_root_syn = (
                         F.mse_loss(root_cubes_syn1, target_cubes1)
@@ -356,12 +356,12 @@ class MultiPersonPoseNetSSV(nn.Module):
 
         if epoch >= self.init_train_epochs_rootnet:
             if self.single_aug_training_posenet:
-                loss_pose3d_ssv1 = F.smooth_l1_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
+                loss_pose3d_ssv1 = F.mse_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
                 pred1 = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
                 pred1[:, :, :, 3:] = grid_centers[:, :, 3:].reshape(batch_size, -1, 1, 2)
             else:
-                loss_pose3d_ssv1 = F.smooth_l1_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
-                loss_pose3d_ssv2 = F.smooth_l1_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
+                loss_pose3d_ssv1 = F.mse_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
+                loss_pose3d_ssv2 = F.mse_loss(torch.zeros(1, device=device), torch.zeros(1, device=device))
                 pred1 = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
                 pred2 = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
                 pred1[:, :, :, 3:] = grid_centers[:, :, 3:].reshape(batch_size, -1, 1, 2)
@@ -447,17 +447,17 @@ class MultiPersonPoseNetSSV(nn.Module):
                     heatmaps_all_11 = torch.cat(heatmaps_all_11, 0)
 
                     if targets_2d1 is not None:
-                        loss_pose3d_ssv1 = F.smooth_l1_loss(targets_2d1, heatmaps_all_11)
+                        loss_pose3d_ssv1 = F.mse_loss(targets_2d1, heatmaps_all_11)
                     losses["loss_pose3d_ssv"] = loss_pose3d_ssv1
                 else:
                     losses["loss_pose3d_ssv"] = self.pose_net.v2v_net(self.zero_tensor_posenet).mean() * 0.0
             else:
                 if pred1[0].shape[0] > 0 and pred2[0].shape[0] > 0:
                     kps_2d_12 = [
-                        cameras.project_pose_batch([p.to('cuda:0') for p in pred1], cam, trans2) for cam in proj_cameras
+                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred1], cam) for cam in proj_cameras
                     ]  # project the 3D poses to MV2
                     kps_2d_21 = [
-                        cameras.project_pose_batch([p.to('cuda:0') for p in pred2], cam, trans1) for cam in proj_cameras
+                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred2], cam) for cam in proj_cameras
                     ]  # project the 3D poses to MV1
                     # 2.0 check 2D coords for each view with ground truth (easy check; i guess it is good)
                     # 3.0 generate heatmaps from these coords (see sspose) I hope this is differential
@@ -490,21 +490,24 @@ class MultiPersonPoseNetSSV(nn.Module):
 
                     if targets_2d1 is not None:
                         if self.WITH_ATTN:
-                            loss_pose3d_ssv1 = (F.smooth_l1_loss(targets_2d1, heatmaps_all_21, reduction='none') * attns1).mean()
+                            #print(f'attns1: min={attns1.min()}, max={attns1.max()}, mean={attns1.mean()}')
+                            #print(f'targets_2d1: min={targets_2d1.min()}, max={targets_2d1.max()}, mean={targets_2d1.mean()}')
+                            #print(f'heatmaps_all_21: min={heatmaps_all_21.min()}, max={heatmaps_all_21.max()}, mean={heatmaps_all_21.mean()}')
+                            loss_pose3d_ssv1 = (F.mse_loss(targets_2d1, heatmaps_all_21, reduction='none') * attns1).mean()
                         else:
-                            loss_pose3d_ssv1 = F.smooth_l1_loss(targets_2d1, heatmaps_all_21)
+                            loss_pose3d_ssv1 = F.mse_loss(targets_2d1, heatmaps_all_21)
                     if targets_2d2 is not None:
                         if self.WITH_ATTN:
-                            loss_pose3d_ssv2 = (F.smooth_l1_loss(targets_2d2, heatmaps_all_12, reduction='none') * attns2).mean()
+                            loss_pose3d_ssv2 = (F.mse_loss(targets_2d2, heatmaps_all_12, reduction='none') * attns2).mean()
                         else:
-                            loss_pose3d_ssv2 = F.smooth_l1_loss(targets_2d2, heatmaps_all_12)
+                            loss_pose3d_ssv2 = F.mse_loss(targets_2d2, heatmaps_all_12)
                     losses["loss_pose3d_ssv"] = loss_pose3d_ssv1 + loss_pose3d_ssv2
 
                     if self.WITH_ATTN:
                         attns1_gt = torch.ones_like(attns1, device=device)
                         attns2_gt = torch.ones_like(attns2, device=device)
                         # attns1.shape: [5,1,15,128,240]
-                        losses['loss_attn_ssv'] = (F.smooth_l1_loss(attns1, attns1_gt) + F.smooth_l1_loss(attns2, attns2_gt)) * self.attn_weight
+                        losses['loss_attn_ssv'] = (F.mse_loss(attns1, attns1_gt) + F.mse_loss(attns2, attns2_gt)) * self.attn_weight
 
                     if self.USE_L1 and epoch >= self.L1_EPOCH:
                         losses['loss_pose3d_l1_ssv'] = (self.l1_matching_loss(kps_2d_12, meta2) + self.l1_matching_loss(kps_2d_21, meta1)) * self.L1_WEIGHT
@@ -513,7 +516,7 @@ class MultiPersonPoseNetSSV(nn.Module):
                         attns1_gt = torch.ones_like(attns1, device=device)
                         attns2_gt = torch.ones_like(attns2, device=device)
                         # attns1.shape: [5,1,15,128,240]
-                        losses['loss_attn_ssv'] = (F.smooth_l1_loss(attns1, attns1_gt) + F.smooth_l1_loss(attns2, attns2_gt)) * 0.0
+                        losses['loss_attn_ssv'] = (F.mse_loss(attns1, attns1_gt) + F.mse_loss(attns2, attns2_gt)) * 0.0
                     if self.USE_L1 and epoch >= self.L1_EPOCH:
                         l1_losses = torch.zeros(5, device=device).mean()
                         losses['loss_pose3d_l1_ssv'] = l1_losses * 0.0

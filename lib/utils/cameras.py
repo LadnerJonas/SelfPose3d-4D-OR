@@ -117,6 +117,58 @@ def project_pose_batch(x, cam, trans):
     R, T, f, c, k, p = cam["R"], cam["T"], cam["f"], cam["c"], cam["k"], cam["p"]
     return project_point_radial_batch(x, R, T, f, c, k, p, trans)
 
+def project_points_radial_OR_4D(input, R, T, f, c):
+    n = input.shape[0]
+    norm_input = (torch.t(input / 500))
+
+    if T.dim() == 3:
+        T = T.squeeze()
+        T = T.unsqueeze(1)
+    t_expanded = T.expand(3, n)
+
+    centered_input = norm_input - t_expanded
+
+    if R.dim() == 3:
+        R = R.squeeze()
+
+    xcam = torch.mm(R.inverse(), centered_input).t()
+
+    xcam[:, 1] *= -1
+    xcam[:, 2] *= -1
+
+    y = xcam[:, :2] / (xcam[:, 2].unsqueeze(1) + 1e-5)
+    ypixel = (y * f.T) + c.T
+
+    return ypixel
+
+def project_pose_OR_4D(x, camera):
+    R, T, f, c, _, _ = unfold_camera_param(camera, device=x.device)
+    return project_points_radial_OR_4D(x, R, T, f, c)
+
+
+def project_points_radial_OR_4D_batch(x_list, R, T, f, c):
+    output = []
+    for x_tensor in x_list:
+        if x_tensor.dim() == 2:
+            x_tensor = x_tensor.unsqueeze(0)
+
+        inner_results = []
+
+        for i in range(x_tensor.size(0)):
+            x_batch = x_tensor[i]
+            ypixel = project_points_radial_OR_4D(x_batch, R, T, f, c)
+            inner_results.append(ypixel)
+
+        output.append(torch.stack(inner_results))
+
+    output = torch.stack(output)
+    return output
+
+
+def project_pose_OR_4D_batch(x, camera):
+    R, T, f, c, _, _ = unfold_camera_param(camera, device=x[0].device)
+    return project_points_radial_OR_4D_batch(x, R, T, f, c)
+
 
 def world_to_camera_frame(x, R, T):
     """
