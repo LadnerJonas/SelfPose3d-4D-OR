@@ -463,15 +463,15 @@ def save_debug_3d_cubes(config, meta, root, prefix):
         y = roots_gt[:num_person, 1].cpu()
         z = roots_gt[:num_person, 2].cpu()
         ax.scatter(x, y, z, c="r")
-        print("roots-gt:",x,y,z)
+        #print("roots-gt:",x,y,z)
 
         index = roots_pred[:, 3] >= 0
         x = roots_pred[index, 0].cpu()
         y = roots_pred[index, 1].cpu()
         z = roots_pred[index, 2].cpu()
         ax.scatter(x, y, z, c="b")
-        print("roots-pred:",x,y,z)
-        print("roots-pred:",roots_pred)
+        #print("roots-pred:",x,y,z)
+        #print("roots-pred:",roots_pred)
 
         space_size = config.MULTI_PERSON.SPACE_SIZE
         space_center = config.MULTI_PERSON.SPACE_CENTER

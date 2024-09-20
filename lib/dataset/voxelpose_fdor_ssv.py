@@ -71,7 +71,7 @@ def coord_transform_human_pose_tool_to_OR_4D(arr):
 
 
 TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]}
-#TAKE_SPLIT = {'train': [5], 'validation': [4], 'test': [2, 6]}
+#TAKE_SPLIT = {'train': [5], 'validation': [4], 'test': [2]}
 
 
 class Voxelpose_fdor_ssv(JointsDatasetSSV):

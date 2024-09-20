@@ -454,10 +454,10 @@ class MultiPersonPoseNetSSV(nn.Module):
             else:
                 if pred1[0].shape[0] > 0 and pred2[0].shape[0] > 0:
                     kps_2d_12 = [
-                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred1], cam) for cam in proj_cameras
+                        cameras.project_pose_batch([p.to('cuda:0') for p in pred1], cam, trans1) for cam in proj_cameras
                     ]  # project the 3D poses to MV2
                     kps_2d_21 = [
-                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred2], cam) for cam in proj_cameras
+                        cameras.project_pose_batch([p.to('cuda:0') for p in pred2], cam, trans2) for cam in proj_cameras
                     ]  # project the 3D poses to MV1
                     # 2.0 check 2D coords for each view with ground truth (easy check; i guess it is good)
                     # 3.0 generate heatmaps from these coords (see sspose) I hope this is differential

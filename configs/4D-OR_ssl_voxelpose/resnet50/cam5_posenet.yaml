@@ -8,7 +8,7 @@ DATA_DIR: ""
 GPUS: "0"
 OUTPUT_DIR: "./results/4D-OR-voxelpose/"
 LOG_DIR: "./results/4D-OR-voxelpose-log/"
-WORKERS: 1
+WORKERS: 2
 PRINT_FREQ: 100
 WITH_SSV: True
 WITH_ATTN: True
@@ -49,10 +49,10 @@ DATASET:
     - 5
     - 6
 NETWORK:
-  PRETRAINED_BACKBONE: "models/4D-OR-voxelpose/backbone_final.pth.tar"
+  PRETRAINED_BACKBONE: "models/4D-OR-voxelpose/backbone_final_v2.pth.tar"
   PRETRAINED: "" # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
   TARGET_TYPE: gaussian
-  INIT_ROOTNET: "models/4D-OR-voxelpose/rootnet_final.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
+  INIT_ROOTNET: "models/4D-OR-voxelpose/rootnet_final_v2.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
   INIT_ALL: ""
   TRAIN_BACKBONE: True
   TRAIN_ONLY_ROOTNET: False
@@ -125,7 +125,7 @@ MULTI_PERSON:
     - 80
     - 80
   MAX_PEOPLE_NUM: 8
-  THRESHOLD: 0.3
+  THRESHOLD: 0.2
 PICT_STRUCT:
   GRID_SIZE:
     - 2000.0
