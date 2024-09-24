@@ -73,7 +73,7 @@ class ProjectLayer(nn.Module):
                     cam = {}
                     for k, v in meta[c]['camera'].items():
                         cam[k] = v[i]
-                    xy = cameras.project_pose(grid, cam)
+                    xy = cameras.project_pose_OR_4D(grid, cam)
 
                     bounding[i, 0, 0, :, c] = (xy[:, 0] >= 0) & (xy[:, 1] >= 0) & (xy[:, 0] < width.to(device)) & (
                                 xy[:, 1] < height.to(device))

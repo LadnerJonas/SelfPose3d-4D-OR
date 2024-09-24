@@ -124,6 +124,16 @@ def project_pose_batch(x, cam, trans):
     return project_point_radial_batch(x, R, T, f, c, k, p, trans)
 
 def project_points_radial_OR_4D(input, R, T, f, c):
+    """
+    Args
+        input: Nx3 points in world coordinates
+        R: 3x3 Camera rotation matrix
+        T: 3x1 Camera translation parameters
+        f: (scalar) Camera focal length
+        c: 2x1 Camera center
+    Returns
+        ypixel.T: Nx2 points in pixel space
+    """
     n = input.shape[0]
     norm_input = (torch.t(input / 500))
 
@@ -137,15 +147,15 @@ def project_points_radial_OR_4D(input, R, T, f, c):
     if R.dim() == 3:
         R = R.squeeze()
 
-    xcam = torch.mm(R.inverse(), centered_input).t()
+    xcam = torch.mm(R.inverse(), centered_input)
 
-    xcam[:, 1] *= -1
-    xcam[:, 2] *= -1
+    xcam[1, :] *= -1
+    xcam[2, :] *= -1
 
-    y = xcam[:, :2] / (xcam[:, 2].unsqueeze(1) + 1e-5)
-    ypixel = (f.t() * y) + c.t()
+    y = xcam[:2, :] / (xcam[2, :] + 1e-5)
+    ypixel = (f * y) + c
 
-    return ypixel
+    return torch.t(ypixel)
 
 def project_pose_OR_4D(x, camera):
     R, T, f, c, _, _ = unfold_camera_param(camera, device=x.device)

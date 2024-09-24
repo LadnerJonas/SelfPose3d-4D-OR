@@ -128,7 +128,7 @@ config.DATASET.TRAIN_DATASET = 'mixed_dataset'
 config.DATASET.TEST_DATASET = 'multi_view_h36m'
 config.DATASET.TRAIN_SUBSET = 'train'
 config.DATASET.TEST_SUBSET = 'validation'
-config.DATASET.ROOTIDX = 2
+config.DATASET.ROOTIDX = [4, 5]
 config.DATASET.DATA_FORMAT = 'jpg'
 config.DATASET.BBOX = 2000
 config.DATASET.CROP = True
@@ -151,7 +151,7 @@ config.DATASET.APPLY_RANDAUG = False
 config.DATASET.SUFFIX = "sub"
 config.DATASET.GT_3D_FILE = "panoptic_training_pose.pkl"
 config.DATASET.TRAIN_PSEUDO_GT3D = False
-config.DATASET.ROOTIDX_PSEUDO = 2
+config.DATASET.ROOTIDX_PSEUDO = [4, 5]
 
 # train
 config.TRAIN = edict()

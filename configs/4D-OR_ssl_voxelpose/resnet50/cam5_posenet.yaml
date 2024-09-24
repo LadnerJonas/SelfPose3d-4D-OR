@@ -49,10 +49,10 @@ DATASET:
     - 5
     - 6
 NETWORK:
-  PRETRAINED_BACKBONE: "models/4D-OR-voxelpose/backbone_final_v2.pth.tar"
+  PRETRAINED_BACKBONE: "models/4D-OR-voxelpose/backbone_final_with_project_pose.pth.tar"
   PRETRAINED: "" # 'models/pytorch/imagenet/resnet50-19c8e357.pth'
   TARGET_TYPE: gaussian
-  INIT_ROOTNET: "models/4D-OR-voxelpose/rootnet_final_v2.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
+  INIT_ROOTNET: "models/4D-OR-voxelpose/rootnet_final_with_affine_transformation-and-pseudoroot-idx-and-slower-longer-training.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
   INIT_ALL: ""
   TRAIN_BACKBONE: True
   TRAIN_ONLY_ROOTNET: False
@@ -95,13 +95,13 @@ TRAIN:
   BATCH_SIZE: 1
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 8
+  END_EPOCH: 15 #8
   RESUME: false
   OPTIMIZER: adam
-  LR: 0.0001
+  LR: 0.00002 #0.0001
   LR_FACTOR: 0.1
-  LR_STEP: [5, 7]
-  L1_EPOCH: 5
+  LR_STEP: [10, 13] #[5, 7]
+  L1_EPOCH: 10
 TEST:
   MODEL_FILE: "model_best.pth.tar"
   BATCH_SIZE: 1
