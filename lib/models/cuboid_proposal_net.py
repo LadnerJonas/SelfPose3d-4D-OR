@@ -101,9 +101,18 @@ class CuboidProposalNet(nn.Module):
 
     def forward(self, all_heatmaps, meta, flip_xcoords=None):
         if self.rootnet_roothm:
-            all_heatmaps_copy = [
-                a[:, self.root_id, :, :][:, None].clone() for a in all_heatmaps
-            ]
+            all_heatmaps_copy = []
+
+            for a in all_heatmaps:
+                if isinstance(self.root_id, int):
+                    # If root_id is a single integer, proceed as before
+                    heatmap = a[:, self.root_id, :, :][:, None].clone()
+                else:
+                    # If root_id is a list, interpolate between the heatmaps
+                    selected_heatmaps = a[:, self.root_id, :, :].clone()  # Select the heatmaps corresponding to the root_ids
+                    heatmap = selected_heatmaps.mean(dim=1, keepdim=True)  # Average across the selected heatmaps
+                all_heatmaps_copy.append(heatmap)
+
         else:
             all_heatmaps_copy = all_heatmaps
 

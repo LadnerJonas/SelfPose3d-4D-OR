@@ -80,7 +80,7 @@ class MultiPersonPoseNetSSV(nn.Module):
         self.rootnet_cube_size = cfg.MULTI_PERSON.INITIAL_CUBE_SIZE
         self.rootnet_roothm = cfg.NETWORK.ROOTNET_ROOTHM
         if self.rootnet_roothm:
-            self.rootnet_num_joints = 1
+            self.rootnet_num_joints = 2
         else:
             self.rootnet_num_joints = cfg.NETWORK.NUM_JOINTS
         self.posenet_num_joints = cfg.NETWORK.NUM_JOINTS
@@ -432,7 +432,7 @@ class MultiPersonPoseNetSSV(nn.Module):
 
             if self.single_aug_training_posenet:
                 if pred1[0].shape[0] > 0:
-                    kps_2d_11 = [cameras.project_pose_batch(pred1, cam, trans1) for cam in proj_cameras]
+                    kps_2d_11 = [cameras.project_pose_OR_4D_batch(pred1, cam, trans1) for cam in proj_cameras]
                     heatmaps_all_11 = []
                     for kps_views1 in kps_2d_11:
                         hm_b = []
@@ -454,10 +454,10 @@ class MultiPersonPoseNetSSV(nn.Module):
             else:
                 if pred1[0].shape[0] > 0 and pred2[0].shape[0] > 0:
                     kps_2d_12 = [
-                        cameras.project_pose_batch([p.to('cuda:0') for p in pred1], cam, trans1) for cam in proj_cameras
+                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred1], cam, trans1) for cam in proj_cameras
                     ]  # project the 3D poses to MV2
                     kps_2d_21 = [
-                        cameras.project_pose_batch([p.to('cuda:0') for p in pred2], cam, trans2) for cam in proj_cameras
+                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred2], cam, trans2) for cam in proj_cameras
                     ]  # project the 3D poses to MV1
                     # 2.0 check 2D coords for each view with ground truth (easy check; i guess it is good)
                     # 3.0 generate heatmaps from these coords (see sspose) I hope this is differential
