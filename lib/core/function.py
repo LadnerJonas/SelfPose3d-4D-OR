@@ -98,14 +98,18 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
             print("do it later")
             assert False
 
-        loss = sum([v.mean() for v in loss_dict.values() if v.requires_grad])
+        # Replace NaN tensors in loss_dict items with 1.0
+        #for k, v in loss_dict.items():
+        #    if torch.isnan(v.mean()):
+        #        loss_dict[k] = torch.tensor(1.0, requires_grad=True)
+
+        loss = sum([v.nanmean() for v in loss_dict.values() if v.requires_grad])
         for k, v in loss_dict.items():
-            losses_meter[k].update(v.mean())
+            losses_meter[k].update(v.nanmean())
         losses_meter["losses"].update(loss.item())
 
         optimizer.zero_grad()
-        with torch.autograd.set_detect_anomaly(True):
-            loss.backward()
+        loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
 

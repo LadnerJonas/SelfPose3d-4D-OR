@@ -135,9 +135,9 @@ config.DATASET.CROP = True
 config.DATASET.COLOR_RGB = False
 config.DATASET.FLIP = True
 config.DATASET.DATA_AUGMENTATION = True
-config.DATASET.CAMERA_NUM = 5
-config.DATASET.CAMERAS = [0,1,2,3,4]
-config.DATASET.CAMERA_NUM_TOTAL = 5
+config.DATASET.CAMERA_NUM = 6
+config.DATASET.CAMERAS = [0,1,2,3,4,5]
+config.DATASET.CAMERA_NUM_TOTAL = 6
 
 # training data augmentation
 config.DATASET.SCALE_FACTOR = 0
