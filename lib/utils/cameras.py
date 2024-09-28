@@ -170,13 +170,13 @@ def project_points_radial_OR_4D(input, R, T, f, c, k, p):
     ypixel_distorted = (f * y_corr) + c
 
     # Calculate the difference between distorted and non-distorted points
-    ypixel_no_distortion = (f * y) + c
-    difference = ypixel_distorted - ypixel_no_distortion
+    #ypixel_no_distortion = (f * y) + c
+    #difference = ypixel_distorted - ypixel_no_distortion
 
     # Print the difference
-    print("Difference between distorted and non-distorted points:")
-    print(k, p)
-    print(difference.T)
+    #print("Difference between distorted and non-distorted points:")
+    #print(k, p)
+    #print(difference.T)
 
     return torch.t(ypixel_distorted)
 
