@@ -119,6 +119,7 @@ config.POSE_RESNET.FINAL_CONV_KERNEL = 1
 
 config.LOSS = edict()
 config.LOSS.USE_TARGET_WEIGHT = True
+config.LOSS.PATIENT_WEIGHT = 4
 config.LOSS.USE_DIFFERENT_JOINTS_WEIGHT = False
 
 # DATASET related params

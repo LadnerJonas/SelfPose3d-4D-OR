@@ -22,6 +22,7 @@ class MultiPersonPoseNet(nn.Module):
         super(MultiPersonPoseNet, self).__init__()
         self.num_cand = cfg.MULTI_PERSON.MAX_PEOPLE_NUM
         self.num_joints = cfg.NETWORK.NUM_JOINTS
+        self.patient_weight = cfg.LOSS.PATIENT_WEIGHT
 
         self.train_only_2d = cfg.NETWORK.TRAIN_ONLY_2D
         self.backbone = backbone
@@ -59,7 +60,7 @@ class MultiPersonPoseNet(nn.Module):
             for t, w, o in zip(targets_2d, weights_2d, all_heatmaps):
                 loss_2d += criterion(o, t, True, w)
             loss_2d /= len(all_heatmaps)
-        
+
         if self.train_only_2d:
             return loss_2d, all_heatmaps
         else:
@@ -96,10 +97,14 @@ class MultiPersonPoseNet(nn.Module):
                     # calculate 3D pose loss
                     if self.training and 'joints_3d' in meta[0] and 'joints_3d_vis' in meta[0]:
                         gt_3d = meta[0]['joints_3d'].float()
+                        is_patient_masks = meta[0]['is_patient_mask']
                         for i in range(batch_size):
                             if pred[i, n, 0, 3] >= 0:
                                 targets = gt_3d[i:i + 1, pred[i, n, 0, 3].long()]
                                 weights_3d = meta[0]['joints_3d_vis'][i:i + 1, pred[i, n, 0, 3].long(), :, 0:1].float()
+                                is_patient = is_patient_masks[i, n]
+                                if bool(is_patient):
+                                    weights_3d *= self.patient_weight
                                 count += 1
                                 loss_cord = (loss_cord * (count - 1) +
                                             criterion_cord(single_pose[i:i + 1], targets, True, weights_3d)) / count
