@@ -241,9 +241,40 @@ class Voxelpose_fdor(JointsDatasetVoxelPose):
                         x = obj_points[:, 0]
                         y = obj_points[:, 1]
                         z = obj_points[:, 2]
-                        u = (x * cam['fx'] / z) + cam['cx']
-                        v = (y * cam['fy'] / z) + cam['cy']
-                        pose2d = np.stack([u, v], axis=1)
+
+                        fx = cam['fx']
+                        fy = cam['fy']
+                        cx = cam['cx']
+                        cy = cam['cy']
+                        # Project points without distortion
+                        u = (x * fx / z) + cx
+                        v = (y * fy / z) + cy
+
+                        # Distortion coefficients
+                        k1, k2, p1, p2, k3 = cam['distCoef']
+
+                        # Scale u and v back to the original range before distortion
+                        u_normalized = (u - cx) / fx
+                        v_normalized = (v - cy) / fy
+
+                        # Calculate radial distortion
+                        r2 = u_normalized**2 + v_normalized**2
+                        radial_distortion = 1 + k1 * r2 + k2 * r2**2 + k3 * r2**3
+
+                        # Calculate tangential distortion
+                        tan_distortion_x = 2 * p1 * u_normalized * v_normalized + p2 * (u_normalized**2 + v_normalized**2)
+                        tan_distortion_y = p1 * (u_normalized**2 + v_normalized**2) + 2 * p2 * u_normalized * v_normalized
+
+                        # Apply distortion corrections
+                        u_distorted_normalized = u_normalized * radial_distortion + tan_distortion_x
+                        v_distorted_normalized = v_normalized * radial_distortion + tan_distortion_y
+
+                        # Scale back to pixel coordinates
+                        u_distorted = u_distorted_normalized * fx + cx
+                        v_distorted = v_distorted_normalized * fy + cy
+
+                        # Final 2D pose points
+                        pose2d = np.stack([u_distorted, v_distorted], axis=1)
                         x_check = np.bitwise_and(pose2d[:, 0] >= 0,
                                                  pose2d[:, 0] <= width - 1)
                         y_check = np.bitwise_and(pose2d[:, 1] >= 0,
