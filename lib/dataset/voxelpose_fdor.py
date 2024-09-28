@@ -317,7 +317,23 @@ class Voxelpose_fdor(JointsDatasetVoxelPose):
                 c_x = cam_info['color_parameters']['c_x']
                 c_y = cam_info['color_parameters']['c_y']
 
-                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': np.zeros(5, ), 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
+                # Extract radial and tangential distortion coefficients
+                radial_distortion_json = cam_info['color_parameters']['radial_distortion']
+                tangential_distortion_json = cam_info['color_parameters']['tangential_distortion']
+
+                # Radial distortion: Assume the first 3 radial coefficients are relevant
+                k1 = radial_distortion_json['m00']
+                k2 = radial_distortion_json['m10']
+                k3 = radial_distortion_json['m20']
+
+                # Tangential distortion: p1 and p2
+                p1 = tangential_distortion_json['m00']
+                p2 = tangential_distortion_json['m10']
+
+                # Create the distortion coefficients array with 5 elements: k1, k2, p1, p2, k3
+                distCoef = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
+
+                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': distCoef, 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
                                        'fx': np.asarray(fov_x), 'fy': np.asarray(fov_y), 'cx': np.asarray(c_x), 'cy': np.asarray(c_y), 'extrinsics': extrinsics}
         return cameras
 

@@ -123,7 +123,7 @@ def project_pose_batch(x, cam, trans):
     R, T, f, c, k, p = cam["R"], cam["T"], cam["f"], cam["c"], cam["k"], cam["p"]
     return project_point_radial_batch(x, R, T, f, c, k, p, trans)
 
-def project_points_radial_OR_4D(input, R, T, f, c):
+def project_points_radial_OR_4D(input, R, T, f, c, k, p):
     """
     Args
         input: Nx3 points in world coordinates
@@ -131,45 +131,68 @@ def project_points_radial_OR_4D(input, R, T, f, c):
         T: 3x1 Camera translation parameters
         f: (scalar) Camera focal length
         c: 2x1 Camera center
+        k: 3x1 Camera radial distortion coefficients
+        p: 2x1 Camera tangential distortion coefficients
     Returns
         ypixel.T: Nx2 points in pixel space
     """
+    normalized_scale = 500
     n = input.shape[0]
-    norm_input = (torch.t(input / 500))
-
-    if T.dim() == 3:
-        T = T.squeeze()
-        T = T.unsqueeze(1)
-    t_expanded = T.expand(3, n)
-
-    centered_input = norm_input - t_expanded
-
-    if R.dim() == 3:
-        R = R.squeeze()
-
-    xcam = torch.mm(R.inverse(), centered_input)
+    xcam = torch.mm(R.inverse(), torch.t(input / normalized_scale) - T)
 
     xcam[1, :] *= -1
     xcam[2, :] *= -1
 
     y = xcam[:2, :] / (xcam[2, :] + 1e-5)
-    ypixel = (f * y) + c
 
-    return torch.t(ypixel)
+    #v1
+    # Calculate radial distortion
+    #r2 = y[0, :]**2 + y[1, :]**2
+    #radial_distortion = 1 + k[0] * r2 + k[1] * r2**2 + k[2] * r2**3
+    # Apply radial and tangential distortion
+    #y_distorted = torch.zeros_like(y)
+    #y_distorted[0, :] = y[0, :] * radial_distortion + 2 * p[0] * y[0, :] * y[1, :] + p[1] * (r2 + 2 * y[0, :]**2)
+    #y_distorted[1, :] = y[1, :] * radial_distortion + p[0] * (r2 + 2 * y[1, :]**2) + 2 * p[1] * y[0, :] * y[1, :]
+    # Convert both distorted and non-distorted points to pixel space
+    #ypixel_distorted = (f * y_distorted) + c
+
+    #v2
+    kexp = k.repeat((1, n))
+    r2 = torch.sum(y ** 2, 0, keepdim=True) / (normalized_scale ** 2)
+    r2 = torch.clamp(r2, max=1e10)
+    r2exp = torch.cat([r2, r2 ** 2, r2 ** 3], 0)
+    radial = 1 + torch.einsum("ij,ij->j", kexp, r2exp)
+
+    tan = p[0] * y[1] + p[1] * y[0] / normalized_scale
+    corr = (radial + 2 * tan).repeat((2, 1))
+
+    y_corr = y * corr + torch.ger(torch.cat([p[1], p[0]]).view(-1), r2.view(-1))
+    ypixel_distorted = (f * y_corr) + c
+
+    # Calculate the difference between distorted and non-distorted points
+    ypixel_no_distortion = (f * y) + c
+    difference = ypixel_distorted - ypixel_no_distortion
+
+    # Print the difference
+    print("Difference between distorted and non-distorted points:")
+    print(k, p)
+    print(difference.T)
+
+    return torch.t(ypixel_distorted)
 
 def project_pose_OR_4D(x, camera):
-    R, T, f, c, _, _ = unfold_camera_param(camera, device=x.device)
-    return project_points_radial_OR_4D(x, R, T, f, c)
+    R, T, f, c, k, p = unfold_camera_param(camera, device=x.device)
+    return project_points_radial_OR_4D(x, R, T, f, c, k, p)
 
 
-def project_points_radial_OR_4D_batch(x_list, R, T, f, c, trans):
+def project_points_radial_OR_4D_batch(x_list, R, T, f, c, k, p, trans):
     output = []
     for x_tensor in x_list:
         if x_tensor.dim() == 2:
             x_tensor = x_tensor.unsqueeze(0)
 
-        for x_batch, _tr in zip(x_tensor, trans):
-            ypixel = project_points_radial_OR_4D(x_batch, R, T, f, c)
+        for x_batch, _R, _T, _f, _c, _k, _p, _tr in zip(x_tensor, R, T, f, c, k, p, trans):
+            ypixel = project_points_radial_OR_4D(x_batch, _R, _T, _f, _c, _k , _p)
 
             ypixel_homogeneous = torch.cat(
                 (ypixel, torch.ones(ypixel.shape[0], 1, device=ypixel.device, dtype=ypixel.dtype)), dim=1
@@ -183,8 +206,8 @@ def project_points_radial_OR_4D_batch(x_list, R, T, f, c, trans):
 
 
 def project_pose_OR_4D_batch(x, camera, trans):
-    R, T, f, c, _, _ = unfold_camera_param(camera, device=x[0].device)
-    return project_points_radial_OR_4D_batch(x, R, T, f, c, trans)
+    R, T, f, c, k, p = unfold_camera_param(camera, device=x[0].device)
+    return project_points_radial_OR_4D_batch(x, R, T, f, c, k, p, trans)
 
 def world_to_camera_frame(x, R, T):
     """
