@@ -253,12 +253,7 @@ class JointsDatasetSSV(Dataset):
                 )
             npersons_list = []
             for k in range(self.num_views):
-                if k >= len(self.cameras):
-                    continue
-                index = self.camera_num_total * idx + self.cameras[k]
-                if index >= len(self.db):
-                    print(f"index {index} is greater than len of db {len(self.db)}, skipping {self.camera_num_total} * {idx} + {self.cameras[k]}")
-                    continue
+                index = self.camera_num_total * idx + self.cameras[k] - 1 # is needed for voxelpose_fdor as the cameras are stored starting with 1
                 db_rec = deepcopy(self.db[index])
                 db_rec["camera"]["f"] = np.array([db_rec["camera"]["fx"], db_rec["camera"]["fy"]])[
                     ..., None

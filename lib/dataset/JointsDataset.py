@@ -125,6 +125,7 @@ class JointsDataset(Dataset):
 
         joints = db_rec['joints_2d']
         joints_vis = db_rec['joints_2d_vis']
+        is_patient_mask = db_rec['is_patient_mask']
         nposes = len(joints)
         if 'joints_3d' in db_rec:
             joints_3d = db_rec['joints_3d']
@@ -212,6 +213,11 @@ class JointsDataset(Dataset):
             roots_3d = joints_3d_u[:, self.root_id]
         elif isinstance(self.root_id, list):
             roots_3d = np.mean([joints_3d_u[:, j] for j in self.root_id], axis=0)
+
+        is_patient_mask_numpy = np.zeros(self.maximum_person, dtype=np.bool)
+        for i_patient, is_patient in enumerate(is_patient_mask):
+            is_patient_mask_numpy[i_patient] = is_patient
+
         meta = {
             'image': image_file,
             'num_person': nposes,
@@ -266,7 +272,7 @@ class JointsDataset(Dataset):
                 if human_scale == 0:
                     continue
 
-                cur_sigma = self.sigma #* np.sqrt((human_scale / (96.0 * 96.0)))
+                cur_sigma = self.sigma * np.sqrt((human_scale / (96.0 * 96.0)))
                 tmp_size = cur_sigma * 3
                 for joint_id in range(num_joints):
                     feat_stride = self.image_size / self.heatmap_size
@@ -367,7 +373,7 @@ class JointsDataset(Dataset):
                 if human_scale == 0:
                     continue
 
-                cur_sigma = self.sigma #* np.sqrt((human_scale / (96.0 * 96.0)))
+                cur_sigma = self.sigma * np.sqrt((human_scale / (96.0 * 96.0)))
                 tmp_size = cur_sigma * 3
                 for joint_id in range(num_joints):
                     feat_stride = self.image_size / self.heatmap_size
