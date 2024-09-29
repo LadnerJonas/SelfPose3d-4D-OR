@@ -408,6 +408,7 @@ class Voxelpose_fdor(JointsDatasetVoxelPose):
                     continue
                 mpjpes = np.mean(np.sqrt(np.sum((gt[np.newaxis] - pred) ** 2, axis=-1)), axis=-1)
                 min_n = np.argmin(mpjpes)
+                print("gt: ", gt[np.newaxis], "pred: ", pred[min_n])
                 min_mpjpe = np.min(mpjpes)
                 if min_mpjpe < recall_threshold:
                     match_gt += 1

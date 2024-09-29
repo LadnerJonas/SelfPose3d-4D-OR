@@ -395,6 +395,7 @@ def evaluate(self, preds):
             mpjpes = []
             for (gt, gt_vis) in zip(joints_3d, joints_3d_vis):
                 vis = gt_vis[:, 0] > 0
+                print("gt: ", gt[vis], "pose: ", pose[vis, 0:3])
                 mpjpe = np.mean(
                     np.sqrt(
                         np.sum((pose[vis, 0:3] - gt[vis]) ** 2, axis=-1)
