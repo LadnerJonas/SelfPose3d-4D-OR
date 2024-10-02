@@ -76,10 +76,10 @@ TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]
 
 class Voxelpose_fdor_ssv(JointsDatasetSSV):
     def __init__(self, cfg, image_set, is_train, transform=None, inference=False):
+        super().__init__(cfg, image_set, is_train, [], transform)
         self.pixel_std = 200.0
         self.joints_def = OR_4D_JOINTS_DEF
         print(f'transform is none: {transform is None}')
-        super().__init__(cfg, image_set, is_train, [], transform)
         self.take_indices = TAKE_SPLIT[image_set]
         self.camera_num_total = cfg.DATASET.CAMERA_NUM_TOTAL
         print(f'{image_set} using indices: {self.take_indices}')
@@ -99,7 +99,7 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
 
         self.limbs = LIMBS
         self.num_joints = len(OR_4D_JOINTS_DEF)
-        self.cam_list = [1, 2, 3, 4, 5, 6]
+        self.cam_list = [1, 2, 3, 4, 5]
         self.num_views = len(self.cam_list)
 
         self.pred_pose2d = self._get_pred_pose2d()
@@ -262,8 +262,9 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
                         radial_distortion = 1 + k1 * r2 + k2 * r2**2 + k3 * r2**3
 
                         # Calculate tangential distortion
-                        tan_distortion_x = 2 * p1 * u_normalized * v_normalized + p2 * (u_normalized**2 + v_normalized**2)
-                        tan_distortion_y = p1 * (u_normalized**2 + v_normalized**2) + 2 * p2 * u_normalized * v_normalized
+                        tan_distortion_x = 2 * p1 * u_normalized * v_normalized + p2 * (r2 + 2 * u_normalized**2)
+                        tan_distortion_y = p1 * (r2 + 2 * v_normalized**2) + 2 * p2 * u_normalized * v_normalized
+
 
                         # Apply distortion corrections
                         u_distorted_normalized = u_normalized * radial_distortion + tan_distortion_x
@@ -275,6 +276,7 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
 
                         # Final 2D pose points
                         pose2d = np.stack([u_distorted, v_distorted], axis=1)
+                        # pose2d = np.stack([u, v], axis=1)
                         x_check = np.bitwise_and(pose2d[:, 0] >= 0,
                                                  pose2d[:, 0] <= width - 1)
                         y_check = np.bitwise_and(pose2d[:, 1] >= 0,
@@ -315,7 +317,7 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
         print(f'Loaded {len(db)} samples in voxelpose_fdor_ssv')
         return db
 
-    def _get_cam(self, root_path, cam_count=6):
+    def _get_cam(self, root_path, cam_count=5):
         cameras = {}
         for c_idx in range(1, cam_count + 1):
             cam_json_path = root_path / f'camera0{c_idx}.json'
