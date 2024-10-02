@@ -426,13 +426,13 @@ def validate_3d(config, model, loader, epoch, output_dir, with_ssv=False):
             batch_time.update(time.time() - end)
             end = time.time()
             if i % config.PRINT_FREQ == 0 or i == len(loader) - 1:
-                gpu_memory_usage = torch.cuda.memory_allocated(0)
+                gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
                 msg = (
                     "Test: [{0}/{1}]\t"
                     "Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t"
                     "Speed: {speed:.1f} samples/s\t"
                     "Data: {data_time.val:.3f}s ({data_time.avg:.3f}s)\t"
-                    "Memory {memory:.1f}".format(
+                    "Memory {memory:.1f} GB".format(
                         i,
                         len(loader),
                         batch_time=batch_time,
