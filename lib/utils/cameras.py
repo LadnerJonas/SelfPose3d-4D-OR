@@ -8,6 +8,7 @@ Copyright (c) University of Strasbourg, All Rights Reserved.
 from __future__ import division
 import torch
 import numpy as np
+import sys
 
 
 def unfold_camera_param(camera, device=None):
@@ -145,38 +146,18 @@ def project_points_radial_OR_4D(input, R, T, f, c, k, p):
 
     y = xcam[:2, :] / (xcam[2, :] + 1e-5)
 
-    #v1
-    # Calculate radial distortion
-    #r2 = y[0, :]**2 + y[1, :]**2
-    #radial_distortion = 1 + k[0] * r2 + k[1] * r2**2 + k[2] * r2**3
-    # Apply radial and tangential distortion
-    #y_distorted = torch.zeros_like(y)
-    #y_distorted[0, :] = y[0, :] * radial_distortion + 2 * p[0] * y[0, :] * y[1, :] + p[1] * (r2 + 2 * y[0, :]**2)
-    #y_distorted[1, :] = y[1, :] * radial_distortion + p[0] * (r2 + 2 * y[1, :]**2) + 2 * p[1] * y[0, :] * y[1, :]
-    # Convert both distorted and non-distorted points to pixel space
-    #ypixel_distorted = (f * y_distorted) + c
-
-    #v2
     kexp = k.repeat((1, n))
-    r2 = torch.sum(y ** 2, 0, keepdim=True) / (normalized_scale ** 2)
+    r2 = torch.sum(y ** 2, 0, keepdim=True)
     r2 = torch.clamp(r2, max=1e10)
     r2exp = torch.cat([r2, r2 ** 2, r2 ** 3], 0)
     radial = 1 + torch.einsum("ij,ij->j", kexp, r2exp)
 
-    tan = p[0] * y[1] + p[1] * y[0] / normalized_scale
-    corr = (radial + 2 * tan).repeat((2, 1))
+    tan_x = 2 * p[0] * y[0, :] * y[1, :] + p[1] * (r2 + 2 * y[0, :] ** 2)
+    tan_y = p[0] * (r2 + 2 * y[1, :] ** 2) + 2 * p[1] * y[0, :] * y[1, :]
 
-    y_corr = y * corr + torch.ger(torch.cat([p[1], p[0]]).view(-1), r2.view(-1))
+    y_corr = y * radial + torch.stack([tan_x.squeeze(0), tan_y.squeeze(0)], dim=0)
+
     ypixel_distorted = (f * y_corr) + c
-
-    # Calculate the difference between distorted and non-distorted points
-    #ypixel_no_distortion = (f * y) + c
-    #difference = ypixel_distorted - ypixel_no_distortion
-
-    # Print the difference
-    #print("Difference between distorted and non-distorted points:")
-    #print(k, p)
-    #print(difference.T)
 
     return torch.t(ypixel_distorted)
 
