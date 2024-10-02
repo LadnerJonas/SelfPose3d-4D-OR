@@ -40,19 +40,11 @@ DATASET:
   ROOTIDX:
     - 4
     - 5
-  CAMERA_NUM: 6
-  CAMERAS:
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
 NETWORK:
-  PRETRAINED_BACKBONE: "models/4D-OR-voxelpose/backbone_final_with_resnet_v2.pth.tar"
+  PRETRAINED_BACKBONE: "results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/final_state.pth.tar" #"models/4D-OR-voxelpose/backbone_final_with_resnet_v2.pth.tar"
   PRETRAINED: "" #"models/pytorch/imagenet/resnet50-19c8e357.pth"
   TARGET_TYPE: gaussian
-  INIT_ROOTNET: "models/4D-OR-voxelpose/rootnet_final_with_resnet.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
+  INIT_ROOTNET: "results/4D-OR-voxelpose/cam5_rootnet/final_state.pth.tar" #"models/4D-OR-voxelpose/rootnet_final_with_resnet.pth.tar" #"models/cam5_rootnet_epoch2.pth.tar"
   INIT_ALL: ""
   TRAIN_BACKBONE: True
   TRAIN_ONLY_ROOTNET: False
@@ -83,11 +75,9 @@ POSE_RESNET:
     - 256
     - 256
   NUM_DECONV_KERNELS:
-    #- 4
     - 4
     - 4
     - 4
-  #NUM_LAYERS: 50
   NUM_LAYERS: 50
 LOSS:
   USE_TARGET_WEIGHT: true
@@ -126,7 +116,7 @@ MULTI_PERSON:
     - 80
     - 80
   MAX_PEOPLE_NUM: 8
-  THRESHOLD: 0.3
+  THRESHOLD: 0.1
 PICT_STRUCT:
   GRID_SIZE:
     - 2000.0

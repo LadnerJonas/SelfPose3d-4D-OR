@@ -8,7 +8,7 @@ DATA_DIR: ""
 GPUS: "0"
 OUTPUT_DIR: "./results/4D-OR-voxelpose/"
 LOG_DIR: "./results/4D-OR-voxelpose-log/"
-WORKERS: 2
+WORKERS: 1
 PRINT_FREQ: 100
 WITH_SSV: True
 
@@ -32,20 +32,11 @@ DATASET:
   ROOTIDX:
     - 4
     - 5
-  CAMERA_NUM: 6
-  CAMERAS:
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-  CAMERA_NUM_TOTAL: 6
 NETWORK:
-  PRETRAINED_BACKBONE: "models/4D-OR-voxelpose/backbone_final_with_patient_weight.pth.tar" #"results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/model_epoch_11.pth.tar"  "models/4D-OR-voxelpose/backbone_final_project_pose_4D_OR_v2.pth.tar"
+  PRETRAINED_BACKBONE: "results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/model_epoch_20.pth.tar" #"models/4D-OR-voxelpose/backbone_final_with_patient_weight.pth.tar" "models/4D-OR-voxelpose/backbone_final_project_pose_4D_OR_v2.pth.tar"
   PRETRAINED: "" #"models/pytorch/imagenet/resnet50-19c8e357.pth"
   TARGET_TYPE: gaussian
-  INIT_ROOTNET: ""
+  INIT_ROOTNET: "models/cam5_rootnet_epoch2.pth.tar"
   TRAIN_BACKBONE: False
   TRAIN_ONLY_ROOTNET: True
   ROOTNET_TRAIN_SYNTH: True
@@ -95,9 +86,9 @@ TEST:
   BATCH_SIZE: 1
 DEBUG:
   DEBUG: true
-  SAVE_HEATMAPS_GT: false
-  SAVE_HEATMAPS_PRED: false
-  SAVE_3D_POSES: false
+  SAVE_HEATMAPS_GT: true
+  SAVE_HEATMAPS_PRED: true
+  SAVE_3D_POSES: true
   SAVE_3D_ROOTS: true
 MULTI_PERSON:
   SPACE_SIZE:

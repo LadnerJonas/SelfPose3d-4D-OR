@@ -28,10 +28,9 @@ DATASET:
   ROOTIDX:
     - 4
     - 5
-  CAMERA_NUM: 6
 NETWORK:
-  PRETRAINED_BACKBONE: ""
-  PRETRAINED: "" #"models/pytorch/imagenet/resnet50-19c8e357.pth"
+  PRETRAINED_BACKBONE: "results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/final_state.pth.tar" #"./models/backbone_epoch20.pth.tar"
+  PRETRAINED: "" #"models/pose_resnet_50_384x288.pth"
   TARGET_TYPE: gaussian
   TRAIN_BACKBONE: True
   TRAIN_ONLY_2D: True
@@ -64,7 +63,7 @@ LOSS:
   USE_TARGET_WEIGHT: true
   PATIENT_WEIGHT: 4
 TRAIN:
-  BATCH_SIZE: 4
+  BATCH_SIZE: 2
   SHUFFLE: true
   BEGIN_EPOCH: 0
   END_EPOCH: 20
@@ -75,11 +74,12 @@ TRAIN:
   LR_STEP: [10, 15]
 TEST:
   MODEL_FILE: "model_best.pth.tar"
-  BATCH_SIZE: 1
+  BATCH_SIZE: 2
 DEBUG:
   DEBUG: true
   SAVE_HEATMAPS_GT: true
   SAVE_HEATMAPS_PRED: true
+  SAVE_3D_POSES: false
 MULTI_PERSON:
   SPACE_SIZE:
     - 8000.0
