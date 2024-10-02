@@ -9,6 +9,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 import os
 import logging
 import time
@@ -109,7 +111,7 @@ def load_checkpoint(model, optimizer, output_dir, filename='checkpoint.pth.tar')
 def save_checkpoint(states, is_best, output_dir,
                     filename='checkpoint.pth.tar'):
     torch.save(states, os.path.join(output_dir, filename))
-    torch.save(states['state_dict'], os.path.join(output_dir, 'model_epoch_'+ str(states['epoch']) + '.pth.tar'))    
+    torch.save(states['state_dict'], os.path.join(output_dir, 'model_epoch_'+ str(states['epoch']) + '.pth.tar'))
     if is_best and 'state_dict' in states:
         torch.save(states['state_dict'],
                    os.path.join(output_dir, 'model_best.pth.tar'))
@@ -124,26 +126,30 @@ def load_backbone_panoptic(model, pretrained_file):
     prefix = "module."
     new_pretrained_state_dict = {}
     for k, v in pretrained_state_dict.items():
-        if k.replace(prefix, "") in model_state_dict and v.shape == model_state_dict[k.replace(prefix, "")].shape:
-            new_pretrained_state_dict[k.replace(prefix, "")] = v
-        elif k.replace(prefix, "") == "final_layer.weight":  # TODO
+        k_without_prefix = k.replace(prefix, "").replace("backbone.", "")
+        logging.error("load backbone value {}".format(k))
+
+        if k_without_prefix in model_state_dict and v.shape == model_state_dict[k_without_prefix].shape:
+            new_pretrained_state_dict[k_without_prefix] = v
+        elif k_without_prefix == "final_layer.weight":  # TODO
             print("Reiniting final layer filters:", k)
 
-            o = torch.zeros_like(model_state_dict[k.replace(prefix, "")][:, :, :, :])
+            o = torch.zeros_like(model_state_dict[k_without_prefix][:, :, :, :])
             nn.init.xavier_uniform_(o)
             n_filters = min(o.shape[0], v.shape[0])
             o[:n_filters, :, :, :] = v[:n_filters, :, :, :]
 
-            new_pretrained_state_dict[k.replace(prefix, "")] = o
-        elif k.replace(prefix, "") == "final_layer.bias":
+            new_pretrained_state_dict[k_without_prefix] = o
+        elif k_without_prefix == "final_layer.bias":
             print("Reiniting final layer biases:", k)
-            o = torch.zeros_like(model_state_dict[k.replace(prefix, "")][:])
+            o = torch.zeros_like(model_state_dict[k_without_prefix][:])
             nn.init.zeros_(o)
             n_filters = min(o.shape[0], v.shape[0])
             o[:n_filters] = v[:n_filters]
 
-            new_pretrained_state_dict[k.replace(prefix, "")] = o
+            new_pretrained_state_dict[k_without_prefix] = o
     logging.info("load backbone statedict from {}".format(pretrained_file))
+    #logging.error("load backbone statedict {}".format(new_pretrained_state_dict))
     model.module.backbone.load_state_dict(new_pretrained_state_dict)
 
     return model
