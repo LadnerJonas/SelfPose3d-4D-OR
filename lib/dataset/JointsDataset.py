@@ -213,11 +213,6 @@ class JointsDataset(Dataset):
             roots_3d = joints_3d_u[:, self.root_id]
         elif isinstance(self.root_id, list):
             roots_3d = np.mean([joints_3d_u[:, j] for j in self.root_id], axis=0)
-
-        is_patient_mask_numpy = np.zeros(self.maximum_person, dtype=np.bool)
-        for i_patient, is_patient in enumerate(is_patient_mask):
-            is_patient_mask_numpy[i_patient] = is_patient
-
         meta = {
             'image': image_file,
             'num_person': nposes,
@@ -357,7 +352,7 @@ class JointsDataset(Dataset):
         :return: input_heatmap
         '''
         nposes = len(joints)
-        num_joints = joints[0].shape[0]
+        num_joints = self.cfg.NETWORK.NUM_JOINTS
 
         assert self.target_type == 'gaussian', \
             'Only support gaussian map now!'

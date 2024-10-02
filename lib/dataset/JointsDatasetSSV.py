@@ -6,7 +6,7 @@ Copyright (c) University of Strasbourg, All Rights Reserved.
 
 
 import logging
-
+import sys
 from copy import deepcopy
 import cv2
 import random
