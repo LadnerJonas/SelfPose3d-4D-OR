@@ -80,7 +80,7 @@ class MultiPersonPoseNetSSV(nn.Module):
         self.rootnet_cube_size = cfg.MULTI_PERSON.INITIAL_CUBE_SIZE
         self.rootnet_roothm = cfg.NETWORK.ROOTNET_ROOTHM
         if self.rootnet_roothm:
-            self.rootnet_num_joints = 2
+            self.rootnet_num_joints = 1
         else:
             self.rootnet_num_joints = cfg.NETWORK.NUM_JOINTS
         self.posenet_num_joints = cfg.NETWORK.NUM_JOINTS
