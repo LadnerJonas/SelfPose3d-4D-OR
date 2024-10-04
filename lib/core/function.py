@@ -512,7 +512,28 @@ def validate_3d(config, model, loader, epoch, output_dir, with_ssv=False):
             )
             logger.info(msg)
             metric = np.mean(avg_pcp)
+        elif "fdor" in config.DATASET.TEST_DATASET:
+            actor_pcp, avg_pcp, _, recall = loader.dataset.evaluate(preds, root_idx_only=True)
+            msg = "Root | Actor 1 | Actor 2 | Actor 3 | Average | \n" " PCP |  {pcp_1:.2f}  |  {pcp_2:.2f}  |  {pcp_3:.2f}  |  {pcp_avg:.2f}  |\t Recall@500mm: {recall:.4f}".format(
+                pcp_1=actor_pcp[0] * 100,
+                pcp_2=actor_pcp[1] * 100,
+                pcp_3=actor_pcp[2] * 100,
+                pcp_avg=avg_pcp * 100,
+                recall=recall,
+            )
+            logger.info(msg)
+            metric = np.mean(avg_pcp)
 
+            actor_pcp, avg_pcp, _, recall = loader.dataset.evaluate(preds)
+            msg = "All  | Actor 1 | Actor 2 | Actor 3 | Average | \n" " PCP |  {pcp_1:.2f}  |  {pcp_2:.2f}  |  {pcp_3:.2f}  |  {pcp_avg:.2f}  |\t Recall@500mm: {recall:.4f}".format(
+                pcp_1=actor_pcp[0] * 100,
+                pcp_2=actor_pcp[1] * 100,
+                pcp_3=actor_pcp[2] * 100,
+                pcp_avg=avg_pcp * 100,
+                recall=recall,
+            )
+            logger.info(msg)
+            metric = np.mean(avg_pcp)
     return metric
 
 
