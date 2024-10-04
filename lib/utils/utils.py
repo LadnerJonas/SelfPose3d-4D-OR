@@ -150,6 +150,7 @@ def load_backbone_panoptic(model, pretrained_file):
             new_pretrained_state_dict[k_without_prefix] = o
     logging.info("load backbone statedict from {}".format(pretrained_file))
     #logging.error("load backbone statedict {}".format(new_pretrained_state_dict))
-    model.module.backbone.load_state_dict(new_pretrained_state_dict)
-
+    mk, uk = model.module.backbone.load_state_dict(new_pretrained_state_dict)
+    print("=> missing keys in backbone =", mk)
+    print("=> unexpected keys in backbone =", uk)
     return model

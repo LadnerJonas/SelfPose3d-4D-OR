@@ -90,7 +90,6 @@ def project_point_radial_batch(x, R, T, f, c, k, p, trans):
         )
         ypix = (_f.repeat(num_poses, 1, 1) * y) + _c.repeat(num_poses, 1, 1)
 
-        print("ypix shape:", ypix.shape)
         # converting the coordinates into homogeneous form
         ypix = torch.cat(
             (
@@ -105,10 +104,6 @@ def project_point_radial_batch(x, R, T, f, c, k, p, trans):
             ),
             1,
         )
-        print("ypix shape:", ypix.shape)
-        print("transformation shape:", _tr[None].shape)
-        print("transformation shape v2:", _tr[None].repeat(ypix.shape[0], 1, 1).shape)
-        print("type of _tr", type(_tr))
         # Apply the transformation
         ypix = torch.bmm(_tr[None].repeat(ypix.shape[0], 1, 1), ypix)
         ypixel.append(ypix.permute(0, 2, 1)[..., :2])
