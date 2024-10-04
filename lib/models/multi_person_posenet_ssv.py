@@ -7,6 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from cv2 import imshow
+import sys
 
 import torch
 import torch.nn as nn
@@ -300,6 +301,7 @@ class MultiPersonPoseNetSSV(nn.Module):
             loss_2d2 = F.mse_loss(targets_2d2, torch.cat([a.to('cuda:0')[None] for a in all_heatmaps2]))
             loss_2d3 = F.mse_loss(targets_2d3, torch.cat([a.to('cuda:0')[None] for a in all_heatmaps3]))
             losses["loss_2d"] = (loss_2d1 + loss_2d2 + loss_2d3) / 3.0
+            #print(losses["loss_2d"], loss_2d1, loss_2d2, loss_2d3)
         else:
             losses["loss_2d"] = self.backbone(torch.zeros(1, 3, 512, 960, device=device)).mean() * 0.0
         # return None, all_heatmaps3, None, losses
@@ -432,7 +434,7 @@ class MultiPersonPoseNetSSV(nn.Module):
 
             if self.single_aug_training_posenet:
                 if pred1[0].shape[0] > 0:
-                    kps_2d_11 = [cameras.project_pose_OR_4D_batch(pred1, cam, trans1) for cam in proj_cameras]
+                    kps_2d_11 = [cameras.project_pose_batch(pred1, cam, trans1) for cam in proj_cameras]
                     heatmaps_all_11 = []
                     for kps_views1 in kps_2d_11:
                         hm_b = []
@@ -454,10 +456,10 @@ class MultiPersonPoseNetSSV(nn.Module):
             else:
                 if pred1[0].shape[0] > 0 and pred2[0].shape[0] > 0:
                     kps_2d_12 = [
-                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred1], cam, trans1) for cam in proj_cameras
+                        cameras.project_pose_batch([p.to('cuda:0') for p in pred1], cam, trans2) for cam in proj_cameras
                     ]  # project the 3D poses to MV2
                     kps_2d_21 = [
-                        cameras.project_pose_OR_4D_batch([p.to('cuda:0') for p in pred2], cam, trans2) for cam in proj_cameras
+                        cameras.project_pose_batch([p.to('cuda:0') for p in pred2], cam, trans1) for cam in proj_cameras
                     ]  # project the 3D poses to MV1
                     # 2.0 check 2D coords for each view with ground truth (easy check; i guess it is good)
                     # 3.0 generate heatmaps from these coords (see sspose) I hope this is differential
