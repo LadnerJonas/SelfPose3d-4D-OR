@@ -27,10 +27,10 @@ DATASET:
   SUFFIX: "pseudo_hrnet_soft_9videos"
   FLIP: False
   ROOT: "data/4D-OR/data/" # 'data/panoptic/'
-  ROT_FACTOR1: 45
-  ROT_FACTOR2: 45
-  SCALE_FACTOR1: 0.35
-  SCALE_FACTOR2: 0.35
+  ROT_FACTOR1: 0 # 45
+  ROT_FACTOR2: 0 # 45
+  SCALE_FACTOR1: 0 # 0.35
+  SCALE_FACTOR2: 0 # 0.35
   APPLY_CUTOUT: True
   #APPLY_CUTOUT: False
   APPLY_RANDAUG: True
@@ -56,11 +56,11 @@ NETWORK:
     - 2048
     - 1536
   IMAGE_SIZE:
-    - 960
-    - 512
+    - 1024
+    - 768
   HEATMAP_SIZE:
-    - 240
-    - 128
+    - 256
+    - 192
   SIGMA: 3
   NUM_JOINTS: 14
   USE_GT: False
@@ -81,18 +81,17 @@ POSE_RESNET:
   NUM_LAYERS: 50
 LOSS:
   USE_TARGET_WEIGHT: true
-  PATIENT_WEIGHT: 4
 TRAIN:
   BATCH_SIZE: 1
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 8
+  END_EPOCH: 16
   RESUME: false
   OPTIMIZER: adam
   LR: 0.0001
   LR_FACTOR: 0.1
-  LR_STEP: [5, 7]
-  L1_EPOCH: 5
+  LR_STEP: [13, 15]
+  L1_EPOCH: 13
 TEST:
   MODEL_FILE: "model_best.pth.tar"
   BATCH_SIZE: 1
