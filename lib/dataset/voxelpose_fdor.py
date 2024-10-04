@@ -71,15 +71,14 @@ def coord_transform_human_pose_tool_to_OR_4D(arr):
 
 
 TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]}
-#TAKE_SPLIT = {'train': [1], 'validation': [4], 'test': [2, 6]}
+#TAKE_SPLIT = {'train': [1, 2, 3, 4, 5, 7, 9, 10], 'validation': [8], 'test': [6]}
+#TAKE_SPLIT = {'train': [1], 'validation': [4], 'test': [2]}
 
 class Voxelpose_fdor(JointsDataset):
     def __init__(self, cfg, image_set, is_train, transform=None, inference=False):
         self.pixel_std = 200.0
         self.joints_def = OR_4D_JOINTS_DEF
         super().__init__(cfg, image_set, is_train, transform)
-        del self.scale_factor
-        del self.rotation_factor
         del self.num_views
         self.take_indices = TAKE_SPLIT[image_set]
         print(f'{image_set} using indices: {self.take_indices}')
@@ -304,7 +303,7 @@ class Voxelpose_fdor(JointsDataset):
                             'key': f"{identifier}",
                             'image': image_dict['image_path'],
                             'joints_3d': all_poses_3d,
-                            'is_patient_mask': all_is_patient,
+                            #'is_patient_mask': all_is_patient,not in use
                             'joints_3d_vis': all_poses_vis_3d,
                             'joints_2d': all_poses,
                             'joints_2d_vis': all_poses_vis,
@@ -365,7 +364,7 @@ class Voxelpose_fdor(JointsDataset):
                 # Create the distortion coefficients array with 5 elements: k1, k2, p1, p2, k3
                 distCoef = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
 
-                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': distCoef, 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
+                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': np.zeros(5, ), 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
                                        'fx': np.asarray(fov_x), 'fy': np.asarray(fov_y), 'cx': np.asarray(c_x), 'cy': np.asarray(c_y), 'extrinsics': extrinsics}
         return cameras
 
@@ -385,15 +384,22 @@ class Voxelpose_fdor(JointsDataset):
     def __len__(self):
         return self.db_size // self.num_views
 
-    def evaluate(self, preds, recall_threshold=500):
+    def evaluate(self, preds, recall_threshold=500, root_idx_only=False):
         total_gt = 0
         match_gt = 0
         correct_parts = np.zeros(10)
         total_parts = np.zeros(10)
         alpha = 0.5
+
+        # Set limbs to consider based on root_idx_only flag
+        if root_idx_only:
+            limbs_to_consider = [[5, 4]]  # Only calculate for hips
+        else:
+            limbs_to_consider = LIMBS  # Use full limbs list
+
         for idx in range(len(preds)):
             pred = preds[idx].copy()
-            pred = pred[pred[:, 0, 3] >= 0, :, :3]
+            pred = pred[pred[:, 0, 3] >= 0, :, :3]  # Filter out invalid predictions
             input, target_heatmap, target_weight, target_3d, meta, input_heatmap = self[idx]
             gts = meta[0]['joints_3d']
             num_person = [elem['num_person'] for elem in meta]
@@ -409,13 +415,13 @@ class Voxelpose_fdor(JointsDataset):
                     continue
                 mpjpes = np.mean(np.sqrt(np.sum((gt[np.newaxis] - pred) ** 2, axis=-1)), axis=-1)
                 min_n = np.argmin(mpjpes)
-                print("gt: ", gt[np.newaxis], "pred: ", pred[min_n])
                 min_mpjpe = np.min(mpjpes)
                 if min_mpjpe < recall_threshold:
                     match_gt += 1
                 total_gt += 1
 
-                for j, k in enumerate(LIMBS):
+                # Evaluate parts/limbs
+                for j, k in enumerate(limbs_to_consider):
                     total_parts[person] += 1
                     error_s = np.linalg.norm(pred[min_n, k[0], 0:3] - gt[k[0]])
                     error_e = np.linalg.norm(pred[min_n, k[1], 0:3] - gt[k[1]])

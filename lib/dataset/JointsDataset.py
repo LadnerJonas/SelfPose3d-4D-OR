@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import os
+import random
 
 
 from utils.transforms import get_affine_transform
@@ -100,10 +101,6 @@ class JointsDataset(Dataset):
         return len(self.db)
 
     def __getitem__(self, idx):
-        if(idx >= len(self.db)):
-            print(f"idx {idx} and {len(self.db)}")
-            return None, None, None, None, None, None
-
         db_rec = copy.deepcopy(self.db[idx])
 
         image_file = db_rec['image']
@@ -125,7 +122,6 @@ class JointsDataset(Dataset):
 
         joints = db_rec['joints_2d']
         joints_vis = db_rec['joints_2d_vis']
-        is_patient_mask = db_rec['is_patient_mask']
         nposes = len(joints)
         if 'joints_3d' in db_rec:
             joints_3d = db_rec['joints_3d']
@@ -166,20 +162,20 @@ class JointsDataset(Dataset):
                             joints[n][i, 1] >= self.image_size[1]):
                         joints_vis[n][i, :] = 0
 
-        if 'pred_pose2d' in db_rec and db_rec['pred_pose2d'] != None:
+        # if 'pred_pose2d' in db_rec and db_rec['pred_pose2d'] != None:
         #     # For convenience, we use predicted poses and corresponding values at the original heatmaps
         #     # to generate 2d heatmaps for Campus and Shelf dataset.
         #     # You can also use other 2d backbone trained on COCO to generate 2d heatmaps directly.
-            pred_pose2d = db_rec['pred_pose2d']
-            for n in range(len(pred_pose2d)):
-                for i in range(len(pred_pose2d[n])):
-                    pred_pose2d[n][i, 0:2] = affine_transform(pred_pose2d[n][i, 0:2], trans)
+        #     pred_pose2d = db_rec['pred_pose2d']
+        #     for n in range(len(pred_pose2d)):
+        #         for i in range(len(pred_pose2d[n])):
+        #             pred_pose2d[n][i, 0:2] = affine_transform(pred_pose2d[n][i, 0:2], trans)
 
-            input_heatmap = self.generate_input_heatmap(pred_pose2d)
-            input_heatmap = torch.from_numpy(input_heatmap)
-        else:
-            input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
-        #input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
+        #     input_heatmap = self.generate_input_heatmap(pred_pose2d)
+        #     input_heatmap = torch.from_numpy(input_heatmap)
+        # else:
+        #     input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
+        input_heatmap = torch.zeros(self.cfg.NETWORK.NUM_JOINTS, self.heatmap_size[1], self.heatmap_size[0])
 
         target_heatmap, target_weight = self.generate_target_heatmap(
             joints, joints_vis)
@@ -352,7 +348,7 @@ class JointsDataset(Dataset):
         :return: input_heatmap
         '''
         nposes = len(joints)
-        num_joints = self.cfg.NETWORK.NUM_JOINTS
+        num_joints = joints[0].shape[0]
 
         assert self.target_type == 'gaussian', \
             'Only support gaussian map now!'
@@ -368,7 +364,7 @@ class JointsDataset(Dataset):
                 if human_scale == 0:
                     continue
 
-                cur_sigma = self.sigma * np.sqrt((human_scale / (96.0 * 96.0)))
+                cur_sigma = self.sigma #* np.sqrt((human_scale / (96.0 * 96.0)))
                 tmp_size = cur_sigma * 3
                 for joint_id in range(num_joints):
                     feat_stride = self.image_size / self.heatmap_size

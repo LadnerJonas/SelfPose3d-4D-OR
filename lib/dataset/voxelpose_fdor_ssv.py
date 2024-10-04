@@ -71,6 +71,7 @@ def coord_transform_human_pose_tool_to_OR_4D(arr):
 
 
 TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]}
+#TAKE_SPLIT = {'train': [1, 2, 3, 4, 5, 7, 9, 10], 'validation': [8], 'test': [6]}
 #TAKE_SPLIT = {'train': [5], 'validation': [4], 'test': [2]}
 
 
@@ -305,7 +306,7 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
                             'key': f"{identifier}",
                             'image': image_dict['image_path'],
                             'joints_3d': all_poses_3d,
-                            'is_patient_mask': all_is_patient,
+                            #'is_patient_mask': all_is_patient,
                             'joints_3d_vis': all_poses_vis_3d,
                             'joints_2d': all_poses,
                             'joints_2d_vis': all_poses_vis,
@@ -366,7 +367,7 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
                 # Create the distortion coefficients array with 5 elements: k1, k2, p1, p2, k3
                 distCoef = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
 
-                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': distCoef, 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
+                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': np.zeros(5, ), 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
                                        'fx': np.asarray(fov_x), 'fy': np.asarray(fov_y), 'cx': np.asarray(c_x), 'cy': np.asarray(c_y), 'extrinsics': extrinsics}
         return cameras
 
@@ -397,7 +398,7 @@ def evaluate(self, preds):
             mpjpes = []
             for (gt, gt_vis) in zip(joints_3d, joints_3d_vis):
                 vis = gt_vis[:, 0] > 0
-                print("gt: ", gt[vis], "pose: ", pose[vis, 0:3])
+                #print("gt: ", gt[vis], "pose: ", pose[vis, 0:3])
                 mpjpe = np.mean(
                     np.sqrt(
                         np.sum((pose[vis, 0:3] - gt[vis]) ** 2, axis=-1)

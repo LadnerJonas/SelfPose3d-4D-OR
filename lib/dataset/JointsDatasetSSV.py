@@ -6,7 +6,7 @@ Copyright (c) University of Strasbourg, All Rights Reserved.
 
 
 import logging
-import sys
+
 from copy import deepcopy
 import cv2
 import random
@@ -93,7 +93,6 @@ class JointsDatasetSSV(Dataset):
         self.joints_weight = 1
 
         self.transform = transform
-        print(f"JDSSV transform is none: {self.transform is None}")
         self.db = []
         self.debug = False
         self.mis_count = 0
@@ -102,7 +101,6 @@ class JointsDatasetSSV(Dataset):
         self.space_center = np.array(cfg.MULTI_PERSON.SPACE_CENTER)
         self.initial_cube_size = np.array(cfg.MULTI_PERSON.INITIAL_CUBE_SIZE)
         self.min_views_check = cfg.MIN_VIEWS_CHECK
-        print(f"length of db {len(self.db)} in JointsDatasetSSV and num views: {self.num_views}")
 
     def _get_db(self):
         raise NotImplementedError
@@ -113,9 +111,6 @@ class JointsDatasetSSV(Dataset):
     def __len__(
         self,
     ):
-
-        print(f"length of db {len(self.db)} in JointsDatasetSSV and num views: {self.num_views}")
-        print(self.db)
         return len(self.db)
 
     def calculate_min_vis_roots(self, joints_vis_list, root_ids, min_views_check):
@@ -279,7 +274,11 @@ class JointsDatasetSSV(Dataset):
                 nposes = len(joints1)
                 npersons_list.append(nposes)
 
-                height, width = self.height_orig, self.width_orig
+                image_file = db_rec['image']
+                data_numpy = cv2.imread(
+                    image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+
+                height, width, _ = data_numpy.shape
                 c = np.array([width / 2.0, height / 2.0])
                 s = get_scale((width, height), self.image_size)
                 sc1 = np.array([_s + (_s * s1) for _s in s])
@@ -346,19 +345,14 @@ class JointsDatasetSSV(Dataset):
                 ):
                     break
                 else:
-                    #print(f"{int(npers_allviews) == int(min_vis_roots1)} and {int(npers_allviews) == int(min_vis_roots2)}")
-                    #print(f"miss {idx}")
-                    idx = np.random.randint(0, max((len(self) / self.num_views) - self.num_views, 1))
-                    #print(f"new idx {idx}")
+                    idx = np.random.randint(0, (len(self) / self.num_views) - 10)
                     self.mis_count += 1
             else:
-                idx = np.random.randint(0,  max((len(self) / self.num_views) - self.num_views, 1))
+                idx = np.random.randint(0, (len(self) / self.num_views) - 10)
                 self.mis_count += 1
 
 
         for k in range(self.num_views):
-            if k >= len(db_rec_list):
-                continue
             db_rec = db_rec_list[k]
             joints1, joints_vis1 = joints1_list[k], joints_vis1_list[k]
             joints2, joints_vis2 = joints2_list[k], joints_vis2_list[k]
@@ -384,11 +378,9 @@ class JointsDatasetSSV(Dataset):
                 nposes = self.maximum_person
 
             image_file = db_rec["image"]
-            #print(f"image_file {image_file}")
             data_numpy = cv2.imread(image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
 
             if data_numpy is None:
-                print(f"data_numpy of {image_file} is None")
                 return (None,) * 12
 
             if self.color_rgb:
@@ -421,7 +413,7 @@ class JointsDatasetSSV(Dataset):
                 input1 = deepcopy(np.asarray(self.rand_augment(Image.fromarray(input1))))
                 input2 = deepcopy(np.asarray(self.rand_augment(Image.fromarray(input2))))
 
-            if "pred_pose2d" in db_rec and db_rec["pred_pose2d"] != None:
+            if False and "pred_pose2d" in db_rec and db_rec["pred_pose2d"] != None:
                 # For convenience, we use predicted poses and corresponding values at the original heatmaps
                 # to generate 2d heatmaps for Campus and Shelf dataset.
                 # You can also use other 2d backbone trained on COCO to generate 2d heatmaps directly.
@@ -697,7 +689,7 @@ class JointsDatasetSSV(Dataset):
                 if human_scale == 0:
                     continue
 
-                cur_sigma = self.sigma  # * np.sqrt((human_scale / (96.0 * 96.0)))
+                cur_sigma = self.sigma * np.sqrt((human_scale / (96.0 * 96.0)))
                 tmp_size = cur_sigma * 3
                 for joint_id in range(num_joints):
                     feat_stride = self.image_size / self.heatmap_size
