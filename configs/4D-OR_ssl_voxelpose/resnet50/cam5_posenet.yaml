@@ -56,11 +56,11 @@ NETWORK:
     - 2048
     - 1536
   IMAGE_SIZE:
-    - 1024
-    - 768
+    - 960
+    - 512
   HEATMAP_SIZE:
-    - 256
-    - 192
+    - 240
+    - 128
   SIGMA: 3
   NUM_JOINTS: 14
   USE_GT: False
@@ -113,7 +113,7 @@ MULTI_PERSON:
   INITIAL_CUBE_SIZE:
     - 80
     - 80
-    - 80
+    - 20
   MAX_PEOPLE_NUM: 8
   THRESHOLD: 0.1
 PICT_STRUCT:

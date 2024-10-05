@@ -21,16 +21,16 @@ DATASET:
   SUFFIX: "pseudo_hrnet_soft_9videos"
   FLIP: False
   ROOT: "data/4D-OR/data/" # 'data/panoptic/'
-  ROT_FACTOR: 0 #45
-  SCALE_FACTOR: 0 #0.35
+  ROT_FACTOR: 45
+  SCALE_FACTOR: 0.35
   TEST_SUBSET: "validation"
   TRAIN_SUBSET: "train"
   ROOTIDX:
     - 4
     - 5
 NETWORK:
-  PRETRAINED_BACKBONE: #"models/backbone_epoch20.pth.tar" #"results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/final_state.pth.tar"
-  PRETRAINED: "" #"models/pose_resnet_50_384x288.pth"
+  PRETRAINED_BACKBONE: "models/backbone_epoch20.pth.tar" #"results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/final_state.pth.tar"
+  PRETRAINED: "" #"models/pose_resnet_50_256x256.pth" #"models/pose_resnet_50_384x288.pth"
   TARGET_TYPE: gaussian
   TRAIN_BACKBONE: True
   TRAIN_ONLY_2D: True
@@ -62,18 +62,18 @@ POSE_RESNET:
 LOSS:
   USE_TARGET_WEIGHT: true
 TRAIN:
-  BATCH_SIZE: 2
+  BATCH_SIZE: 3
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 30
-  RESUME: true
+  END_EPOCH: 20
+  RESUME: false
   OPTIMIZER: adam
   LR: 0.0001
   LR_FACTOR: 0.1
-  LR_STEP: [25, 28]
+  LR_STEP: [10, 15]
 TEST:
   MODEL_FILE: "model_best.pth.tar"
-  BATCH_SIZE: 2
+  BATCH_SIZE: 3
 DEBUG:
   DEBUG: true
   SAVE_HEATMAPS_GT: true
@@ -91,7 +91,7 @@ MULTI_PERSON:
   INITIAL_CUBE_SIZE:
     - 80
     - 80
-    - 80
+    - 20
   MAX_PEOPLE_NUM: 8
   THRESHOLD: 0.3
 PICT_STRUCT:

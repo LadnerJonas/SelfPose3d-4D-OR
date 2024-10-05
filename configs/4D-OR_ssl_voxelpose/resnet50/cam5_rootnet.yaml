@@ -8,7 +8,7 @@ DATA_DIR: ""
 GPUS: "0"
 OUTPUT_DIR: "./results/4D-OR-voxelpose/"
 LOG_DIR: "./results/4D-OR-voxelpose-log/"
-WORKERS: 1
+WORKERS: 3
 PRINT_FREQ: 100
 WITH_SSV: True
 
@@ -36,7 +36,7 @@ NETWORK:
   PRETRAINED_BACKBONE: "results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/final_state.pth.tar" #"results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/model_epoch_30.pth.tar" #"results/4D-OR-voxelpose/backbone_pseudo_hrnet_soft_9videos/final_state.pth.tar" #"models/4D-OR-voxelpose/backbone_final_with_patient_weight.pth.tar" "models/4D-OR-voxelpose/backbone_final_project_pose_4D_OR_v2.pth.tar"
   PRETRAINED: "" #"models/pytorch/imagenet/resnet50-19c8e357.pth"
   TARGET_TYPE: gaussian
-  INIT_ROOTNET: # "models/cam5_rootnet_epoch2.pth.tar"
+  INIT_ROOTNET: "models/cam5_rootnet_epoch2.pth.tar"
   TRAIN_BACKBONE: False
   TRAIN_ONLY_ROOTNET: True
   ROOTNET_TRAIN_SYNTH: True
@@ -101,7 +101,7 @@ MULTI_PERSON:
   INITIAL_CUBE_SIZE:
     - 80
     - 80
-    - 80
+    - 20
   MAX_PEOPLE_NUM: 8
   THRESHOLD: 0.3
 PICT_STRUCT:
