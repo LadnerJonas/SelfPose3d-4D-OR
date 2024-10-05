@@ -110,7 +110,7 @@ class CuboidProposalNet(nn.Module):
                 else:
                     # If root_id is a list, interpolate between the heatmaps
                     selected_heatmaps = a[:, self.root_id, :, :].clone()  # Select the heatmaps corresponding to the root_ids
-                    heatmap = selected_heatmaps.mean(dim=1, keepdim=True)  # Average across the selected heatmaps
+                    heatmap = selected_heatmaps.mean(dim=1, keepdim=True) * 2  # Average across the selected heatmaps
                 all_heatmaps_copy.append(heatmap)
 
         else:
