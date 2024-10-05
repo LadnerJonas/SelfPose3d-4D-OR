@@ -54,7 +54,6 @@ LIMBS = [
     [11, 5],  # (rightknee,righthip),
     [12, 10],  # (leftfoot,leftknee),
     [13, 11]  # (rightfoot,rightknee),
-
 ]
 
 IDX_TO_BODY_PART = ['head', 'neck', 'leftshoulder', 'rightshoulder', 'lefthip', 'righthip', 'leftelbow', 'rightelbow', 'leftwrist', 'rightwrist', 'leftknee',
@@ -392,19 +391,13 @@ class Voxelpose_fdor(JointsDataset):
         alpha = 0.5
 
         # Set limbs to consider based on root_idx_only flag
-        if root_idx_only:
-            limbs_to_consider = [[5, 4]]  # Only calculate for hips
-        else:
-            limbs_to_consider = LIMBS  # Use full limbs list
+        limbs_to_consider = [[5, 4]] if root_idx_only else LIMBS
 
-        for idx in range(len(preds)):
-            pred = preds[idx].copy()
+        for idx, pred in enumerate(preds):
             pred = pred[pred[:, 0, 3] >= 0, :, :3]  # Filter out invalid predictions
             input, target_heatmap, target_weight, target_3d, meta, input_heatmap = self[idx]
             gts = meta[0]['joints_3d']
-            num_person = [elem['num_person'] for elem in meta]
-            assert len(set(num_person)) == 1
-            num_person = num_person[0]
+            num_person = meta[0]['num_person']
 
             for person in range(num_person):
                 gt = gts[person]
@@ -413,19 +406,24 @@ class Voxelpose_fdor(JointsDataset):
                 if len(pred) == 0:
                     total_gt += 1
                     continue
-                mpjpes = np.mean(np.sqrt(np.sum((gt[np.newaxis] - pred) ** 2, axis=-1)), axis=-1)
+
+                # Compute MPJPE efficiently
+                diff = gt[np.newaxis] - pred
+                mpjpes = np.mean(np.linalg.norm(diff, axis=-1), axis=-1)
                 min_n = np.argmin(mpjpes)
-                min_mpjpe = np.min(mpjpes)
+                min_mpjpe = mpjpes[min_n]
+
                 if min_mpjpe < recall_threshold:
                     match_gt += 1
                 total_gt += 1
 
-                # Evaluate parts/limbs
-                for j, k in enumerate(limbs_to_consider):
+                # Vectorized limb evaluation
+                pred_min_n = pred[min_n]
+                for j, (start, end) in enumerate(limbs_to_consider):
                     total_parts[person] += 1
-                    error_s = np.linalg.norm(pred[min_n, k[0], 0:3] - gt[k[0]])
-                    error_e = np.linalg.norm(pred[min_n, k[1], 0:3] - gt[k[1]])
-                    limb_length = np.linalg.norm(gt[k[0]] - gt[k[1]])
+                    error_s = np.linalg.norm(pred_min_n[start, :3] - gt[start])
+                    error_e = np.linalg.norm(pred_min_n[end, :3] - gt[end])
+                    limb_length = np.linalg.norm(gt[start] - gt[end])
                     if (error_s + error_e) / 2.0 <= alpha * limb_length:
                         correct_parts[person] += 1
 
