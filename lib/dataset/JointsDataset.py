@@ -263,7 +263,7 @@ class JointsDataset(Dataset):
                 if human_scale == 0:
                     continue
 
-                cur_sigma = self.sigma * np.sqrt((human_scale / (96.0 * 96.0)))
+                cur_sigma = self.sigma #* np.sqrt((human_scale / (96.0 * 96.0)))
                 tmp_size = cur_sigma * 3
                 for joint_id in range(num_joints):
                     feat_stride = self.image_size / self.heatmap_size

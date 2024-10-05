@@ -114,27 +114,25 @@ class JointsDatasetSSV(Dataset):
         return len(self.db)
 
     def calculate_min_vis_roots(self, joints_vis_list, root_ids, min_views_check):
-        # Handle the case where root_ids is an array
-        if isinstance(root_ids, (list, np.ndarray)):
-            roots = np.sort(
-                np.array(
-                    [
-                        np.any(np.array(p)[:, root_ids], axis=1).astype(np.int32).sum(axis=1).mean()
-                        for p in joints_vis_list
-                    ]
-                )
-            )[-min_views_check :]
-        else:
-            roots = np.sort(
-                np.array(
-                    [
-                        np.any(np.array(p)[:, root_ids], axis=1).astype(np.int32).sum()
-                        for p in joints_vis_list
-                    ]
-                )
-            )[-min_views_check :]
+        # Check visibility for both cases
+        roots0 = np.sort(
+            np.array(
+                [
+                    np.any(np.array(p)[:, self.root_id[0]], axis=1).astype(np.int32).sum()  # Ensure all joints must be visible
+                    for p in joints_vis_list
+                ]
+            )
+        )[-self.min_views_check :]
+        roots1 = np.sort(
+            np.array(
+                [
+                    np.any(np.array(p)[:, self.root_id[1]], axis=1).astype(np.int32).sum()  # Ensure all joints must be visible
+                    for p in joints_vis_list
+                ]
+            )
+        )[-self.min_views_check :]
 
-        return roots.sum() / min_views_check
+        return (roots0.sum() + roots1.sum()) / 2 * min_views_check
 
     def __getitem__(self, idx):
         (
@@ -339,10 +337,7 @@ class JointsDatasetSSV(Dataset):
                 min_vis_roots2 = self.calculate_min_vis_roots(joints_vis2_list, self.root_id, self.min_views_check)
 
                 npers_allviews = np.max(npersons_list)
-
-                if int(npers_allviews) == int(min_vis_roots1) and int(npers_allviews) == int(
-                    min_vis_roots2
-                ):
+                if int(npers_allviews) == int(min_vis_roots1) and int(npers_allviews) == int(min_vis_roots2):
                     break
                 else:
                     idx = np.random.randint(0, (len(self) / self.num_views) - 10)
@@ -689,7 +684,7 @@ class JointsDatasetSSV(Dataset):
                 if human_scale == 0:
                     continue
 
-                cur_sigma = self.sigma * np.sqrt((human_scale / (96.0 * 96.0)))
+                cur_sigma = self.sigma #* np.sqrt((human_scale / (96.0 * 96.0)))
                 tmp_size = cur_sigma * 3
                 for joint_id in range(num_joints):
                     feat_stride = self.image_size / self.heatmap_size
