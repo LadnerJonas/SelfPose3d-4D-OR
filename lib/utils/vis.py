@@ -57,7 +57,24 @@ LIMBS15_COLORS = ["r","r","m","m","m","g","g","g","m","g","m","m","g","g"]
 LIMBS17 = [[0, 1], [0, 2], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7], [7, 9], [6, 8], [8, 10], [5, 11], [11, 13], [13, 15], [6, 12], [12, 14], [14, 16], [5, 6], [11, 12],]
 
 # shelf / campus
-LIMBS14 = [[0, 1], [1, 2], [3, 4], [4, 5], [2, 3], [6, 7], [7, 8], [9, 10], [10, 11], [2, 8], [3, 9], [8, 12], [9, 12], [12, 13],]
+#LIMBS14 = [[0, 1], [1, 2], [3, 4], [4, 5], [2, 3], [6, 7], [7, 8], [9, 10], [10, 11], [2, 8], [3, 9], [8, 12], [9, 12], [12, 13],]
+#fdor
+LIMBS14 = [
+    [5, 4],  # (righthip-lefthip)
+    [9, 7],  # (rightwrist - rightelbow)
+    [7, 3],  # (rightelbow - rightshoulder)
+    [2, 6],  # (leftshoulder - leftelbow)
+    [6, 8],  # (leftelbow - leftwrist)
+    [5, 3],  # (righthip - rightshoulder)
+    [4, 2],  # (lefthip - leftshoulder)
+    [3, 1],  # (rightshoulder - neck)
+    [2, 1],  # (leftshoulder - neck)
+    [1, 0],  # (neck - head)
+    [10, 4],  # (leftknee,lefthip),
+    [11, 5],  # (rightknee,righthip),
+    [12, 10],  # (leftfoot,leftknee),
+    [13, 11]  # (rightfoot,rightknee),
+]
 
 def save_batch_image_with_joints_multi(
     batch_image,
