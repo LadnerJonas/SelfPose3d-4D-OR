@@ -244,7 +244,7 @@ def save_debug_3d_images_all(config, meta, preds, inputs, targets_2d, heatmaps, 
                         cam = {}
                         for k, v in mt['camera'].items():
                             cam[k] = deepcopy(v[i])
-                        kpt2d = cameras.project_pose_OR_4D(pred[n][..., :3], cam)
+                        kpt2d = cameras.project_pose(pred[n][..., :3], cam)
                         kpt2d = torch.clamp(kpt2d, -1.0, max(width, height))
                         kpt2d = do_transform(kpt2d, trans)
                         for k in eval("LIMBS{}".format(len(joints))):

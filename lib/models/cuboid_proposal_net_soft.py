@@ -221,7 +221,7 @@ class CuboidProposalNetSoft(nn.Module):
             center_pts = [rand_coords[ii][None] for ii in range(rand_coords.shape[0])]
             cams = [deepcopy(c["camera"]) for c in meta]
             trans = meta[0]["trans"]
-            cps_2d = [cameras.project_pose_OR_4D_batch(center_pts, cam, trans) for cam in cams]
+            cps_2d = [cameras.project_pose_batch(center_pts, cam, trans) for cam in cams]
             heatmaps_all = []
             for cps_views in cps_2d:
                 hm_b = []
