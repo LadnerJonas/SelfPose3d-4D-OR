@@ -21,10 +21,10 @@ DATASET:
   SUFFIX: "pseudo_hrnet_soft_9videos"
   FLIP: False
   ROOT: "data/4D-OR/data/" # 'data/panoptic/'
-  ROT_FACTOR1: 0
-  ROT_FACTOR2: 0
-  SCALE_FACTOR1: 0
-  SCALE_FACTOR2: 0
+  ROT_FACTOR1: 45
+  ROT_FACTOR2: 45
+  SCALE_FACTOR1: 0.35
+  SCALE_FACTOR2: 0.35
   APPLY_CUTOUT: False
   APPLY_RANDAUG: False
   TEST_SUBSET: "validation"
@@ -93,7 +93,7 @@ MULTI_PERSON:
   SPACE_SIZE:
     - 8000.0
     - 8000.0
-    - 5000.0
+    - 2000.0
   SPACE_CENTER:
     - 296.1
     - 826.0

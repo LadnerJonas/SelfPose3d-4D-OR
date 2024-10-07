@@ -65,12 +65,12 @@ TRAIN:
   BATCH_SIZE: 3
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 20
+  END_EPOCH: 40
   RESUME: false
   OPTIMIZER: adam
   LR: 0.0001
   LR_FACTOR: 0.1
-  LR_STEP: [10, 15]
+  LR_STEP: [30, 35]
 TEST:
   MODEL_FILE: "model_best.pth.tar"
   BATCH_SIZE: 3
@@ -83,7 +83,7 @@ MULTI_PERSON:
   SPACE_SIZE:
     - 8000.0
     - 8000.0
-    - 5000.0
+    - 2000.0
   SPACE_CENTER:
     - 296.1
     - 826.0
