@@ -70,7 +70,7 @@ def coord_transform_human_pose_tool_to_OR_4D(arr):
 
 
 TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]}
-#TAKE_SPLIT = {'train': [1, 2, 3, 4, 5, 7, 9, 10], 'validation': [8], 'test': [6]}
+#TAKE_SPLIT = {'train': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'validation': [4], 'test': [2, 6]}
 #TAKE_SPLIT = {'train': [1], 'validation': [4], 'test': [2]}
 
 class Voxelpose_fdor(JointsDataset):
@@ -86,10 +86,10 @@ class Voxelpose_fdor(JointsDataset):
         self.take_to_timestamp_to_pcd_and_frames_list = {}
 
         for take_idx in self.take_indices:
-            annotations_path = Path(f'/home/data/4D-OR/export_holistic_take{take_idx}_processed/2D_keypoint_annotations.json')
-            with annotations_path.open() as f:
-                annotations = json.load(f)
-                self.take_to_annotations[take_idx] = annotations
+            # annotations_path = Path(f'/home/data/4D-OR/export_holistic_take{take_idx}_processed/2D_keypoint_annotations.json')
+            # with annotations_path.open() as f:
+            #     annotations = json.load(f)
+            #     self.take_to_annotations[take_idx] = annotations
 
             with open(f'/home/data/4D-OR/export_holistic_take{take_idx}_processed/timestamp_to_pcd_and_frames_list.json') as f:
                 timestamp_to_pcd_and_frames_list = json.load(f)
@@ -108,8 +108,26 @@ class Voxelpose_fdor(JointsDataset):
         print(f'Using {image_set} imageset')
 
     def _get_pred_pose2d(self):
-        pred_2d = np.load(f'/home/guests/jonas_ladner/SelfPose3dParentFolder/SelfPose3d/data/HigherHRNet_files/pred_or_4d_hrnet_coco_{self.image_set}.npz', allow_pickle=True)['arr_0'].item()
-        return pred_2d
+        pred_2d_train = np.load(f'/home/guests/jonas_ladner/SelfPose3dParentFolder/SelfPose3d/data/HigherHRNet_files/pred_or_4d_hrnet_coco_train.npz', allow_pickle=True)['arr_0'].item()
+        pred_2d_validation = np.load(f'/home/guests/jonas_ladner/SelfPose3dParentFolder/SelfPose3d/data/HigherHRNet_files/pred_or_4d_hrnet_coco_validation.npz', allow_pickle=True)['arr_0'].item()
+        pred_2d_test = np.load(f'/home/guests/jonas_ladner/SelfPose3dParentFolder/SelfPose3d/data/HigherHRNet_files/pred_or_4d_hrnet_coco_test.npz', allow_pickle=True)['arr_0'].item()
+        summed_pred_2d = None
+
+        # Loop through each dictionary and sum their values
+        for pred_2d in [pred_2d_train, pred_2d_validation, pred_2d_test]:
+            # Iterate over all arrays (values) in the dictionary
+            for key, array in pred_2d.items():
+                if summed_pred_2d is None:
+                    # Initialize summed_pred_2d with the first array's structure
+                    summed_pred_2d = {key: np.array(array)}
+                else:
+                    # Add arrays element-wise
+                    if key in summed_pred_2d:
+                        summed_pred_2d[key] += np.array(array)
+                    else:
+                        summed_pred_2d[key] = np.array(array)
+
+        return summed_pred_2d
 
     def get_image_dicts(self):
         image_dicts = []
@@ -363,7 +381,7 @@ class Voxelpose_fdor(JointsDataset):
                 # Create the distortion coefficients array with 5 elements: k1, k2, p1, p2, k3
                 distCoef = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
 
-                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': np.zeros(5, ), 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
+                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': distCoef, 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
                                        'fx': np.asarray(fov_x), 'fy': np.asarray(fov_y), 'cx': np.asarray(c_x), 'cy': np.asarray(c_y), 'extrinsics': extrinsics}
         return cameras
 

@@ -367,7 +367,7 @@ class Voxelpose_fdor_ssv(JointsDatasetSSV):
                 # Create the distortion coefficients array with 5 elements: k1, k2, p1, p2, k3
                 distCoef = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
 
-                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': np.zeros(5, ), 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
+                cameras[str(c_idx)] = {'K': intrinsics, 'distCoef': distCoef, 'R': extrinsics[:3, :3], 'T': np.expand_dims(extrinsics[:3, 3], axis=1),
                                        'fx': np.asarray(fov_x), 'fy': np.asarray(fov_y), 'cx': np.asarray(c_x), 'cy': np.asarray(c_y), 'extrinsics': extrinsics}
         return cameras
 
