@@ -50,11 +50,15 @@ class MultiPersonPoseNet(nn.Module):
 
         # calculate 2D heatmap loss
         targets_2d = torch.cat([t[None] for t in targets_2d])
-        criterion = PerJointMSELoss().cuda()
+        criterion = PerJointMSELoss(use_target_weight=False).cuda()
         loss_2d = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
-        if targets_2d is not None:
+        if targets_2d is not None and weights_2d is not None:
             for t, w, o in zip(targets_2d, weights_2d, all_heatmaps):
                 loss_2d += criterion(o, t, True, w)
+            loss_2d /= len(all_heatmaps)
+        elif targets_2d is not None:
+            for t, o in zip(targets_2d, all_heatmaps):
+                loss_2d += criterion(o, t, True, [])
             loss_2d /= len(all_heatmaps)
 
         if self.train_only_2d:

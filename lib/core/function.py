@@ -77,17 +77,20 @@ def train_3d_ssv(config, model, optimizer, loader, epoch, output_dir, writer_dic
             #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
             #print("GPU memory usage: {:.2f} GB (train_3d_ssv after cache clear".format(gpu_memory_usage))
             pred2, heatmaps3, grid_centers, loss_dict = model(
-                views1=inputs1,
+                #views1=inputs1,
+                input_heatmaps1=targets_2d1,
                 meta1=meta1,
                 targets_2d1=targets_2d1,
                 weights_2d1=weights_2d1,
                 targets_3d1=targets_3d1[0],
-                views2=inputs2,
+                #views2=inputs2,
+                input_heatmaps2=targets_2d2,
                 meta2=meta2,
                 targets_2d2=targets_2d2,
                 weights_2d2=weights_2d2,
                 targets_3d2=targets_3d2[0],
-                views3=inputs3,
+                #views3=inputs3,
+                input_heatmaps3=targets_2d3,
                 meta3=meta3,
                 targets_2d3=targets_2d3,
                 weights_2d3=weights_2d3,
@@ -265,8 +268,7 @@ def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
         #gpu_memory_usage = torch.cuda.memory_allocated(0) / 1024.0 / 1024.0 / 1024.0
         #print("GPU memory usage after free {}: {:.2f} GB".format(i,gpu_memory_usage))
 
-        if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET or
-                "fdor" in config.DATASET.TEST_DATASET
+        if ("panoptic" in config.DATASET.TEST_DATASET or "shelf" in config.DATASET.TEST_DATASET
         ):
             if len(inputs) == 0:
                 continue
@@ -286,9 +288,9 @@ def train_3d(config, model, optimizer, loader, epoch, output_dir, writer_dict):
                     weights_2d=weights_2d,
                     targets_3d=targets_3d[0],
                 )
-        elif "campus" in config.DATASET.TEST_DATASET:
+        elif "campus" in config.DATASET.TEST_DATASET or "fdor" in config.DATASET.TEST_DATASET:
             pred, heatmaps, grid_centers, loss_2d, loss_3d, loss_cord = model(
-                meta=meta, targets_3d=targets_3d[0], input_heatmaps=input_heatmap
+                meta=meta, targets_3d=targets_3d[0], input_heatmaps=targets_2d
             )
 
         if config.NETWORK.TRAIN_ONLY_2D:

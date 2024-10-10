@@ -69,9 +69,9 @@ def coord_transform_human_pose_tool_to_OR_4D(arr):
     return arr
 
 
-TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]}
+#TAKE_SPLIT = {'train': [1, 3, 5, 7, 9, 10], 'validation': [4, 8], 'test': [2, 6]}
 #TAKE_SPLIT = {'train': [1, 2, 3, 4, 5, 7, 9, 10], 'validation': [8], 'test': [6]}
-#TAKE_SPLIT = {'train': [1], 'validation': [4], 'test': [2]}
+TAKE_SPLIT = {'train': [1], 'validation': [4], 'test': [2]}
 
 class Voxelpose_fdor(JointsDataset):
     def __init__(self, cfg, image_set, is_train, transform=None, inference=False):
@@ -220,7 +220,7 @@ class Voxelpose_fdor(JointsDataset):
 
                         joints_vis = pose3d[:, -1] > 0.1
 
-                        if not joints_vis[self.root_id[0]] or not joints_vis[self.root_id[1]]:
+                        if not joints_vis[self.root_id] or not joints_vis[self.root_id]:
                             continue
 
                         all_poses_3d.append(pose3d[:, 0:3])

@@ -103,6 +103,7 @@ class CuboidProposalNetSoft(nn.Module):
             self.min_x, self.max_x = grid1Dx.min() + 2500, grid1Dx.max() - 2000
             self.min_y, self.max_y = grid1Dy.min() + 1500, grid1Dy.max() - 1500
             self.min_z, self.max_z = grid1Dz.min() + 250, grid1Dz.max() - 300
+            print("min max", self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z)
             target = np.zeros(
                 (cfg.TRAIN.BATCH_SIZE, cube_size[0], cube_size[1], cube_size[2]), dtype=np.float32
             )
@@ -171,6 +172,7 @@ class CuboidProposalNetSoft(nn.Module):
             rand_coords = torch.cat((x_coords, y_coords, z_coords), -1).to(
                 device=self.grid1Dx.device, dtype=torch.float32
             )
+            print(rand_coords, rand_coords)
             #print("rand_coords", rand_coords)
             # num_roots = meta[0]["num_person"].item()
             # rand_coords = meta[0]["roots_3d"][:, 0:meta[0]["num_person"].item(), :].to(torch.float32)
@@ -221,7 +223,7 @@ class CuboidProposalNetSoft(nn.Module):
             center_pts = [rand_coords[ii][None] for ii in range(rand_coords.shape[0])]
             cams = [deepcopy(c["camera"]) for c in meta]
             trans = meta[0]["trans"]
-            cps_2d = [cameras.project_pose_OR_4D_batch(center_pts, cam, trans) for cam in cams]
+            cps_2d = [cameras.project_pose_batch(center_pts, cam, trans) for cam in cams]
             heatmaps_all = []
             for cps_views in cps_2d:
                 hm_b = []

@@ -118,7 +118,7 @@ class JointsDatasetSSV(Dataset):
         roots0 = np.sort(
             np.array(
                 [
-                    np.any(np.array(p)[:, self.root_id[0]], axis=1).astype(np.int32).sum()  # Ensure all joints must be visible
+                    np.any(np.array(p)[:, self.root_id], axis=1).astype(np.int32).sum()  # Ensure all joints must be visible
                     for p in joints_vis_list
                 ]
             )
@@ -126,7 +126,7 @@ class JointsDatasetSSV(Dataset):
         roots1 = np.sort(
             np.array(
                 [
-                    np.any(np.array(p)[:, self.root_id[1]], axis=1).astype(np.int32).sum()  # Ensure all joints must be visible
+                    np.any(np.array(p)[:, self.root_id], axis=1).astype(np.int32).sum()  # Ensure all joints must be visible
                     for p in joints_vis_list
                 ]
             )
@@ -408,7 +408,7 @@ class JointsDatasetSSV(Dataset):
                 input1 = deepcopy(np.asarray(self.rand_augment(Image.fromarray(input1))))
                 input2 = deepcopy(np.asarray(self.rand_augment(Image.fromarray(input2))))
 
-            if False and "pred_pose2d" in db_rec and db_rec["pred_pose2d"] != None:
+            if "pred_pose2d" in db_rec and db_rec["pred_pose2d"] != None:
                 # For convenience, we use predicted poses and corresponding values at the original heatmaps
                 # to generate 2d heatmaps for Campus and Shelf dataset.
                 # You can also use other 2d backbone trained on COCO to generate 2d heatmaps directly.
@@ -891,12 +891,7 @@ class JointsDatasetSSV(Dataset):
                     x = np.arange(0, size, 1, np.float32)
                     y = x[:, np.newaxis]
                     x0 = y0 = size // 2
-                    if "campus" in self.dataset_name:
-                        max_value = 1.0
-                    else:
-                        max_value = joints[n][joint_id][2] if len(joints[n][joint_id]) == 3 else 1.0
-                        # max_value = max_value**0.5
-                    g = np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * cur_sigma ** 2)) * max_value
+                    g = np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * cur_sigma ** 2))
 
                     # Usable gaussian range
                     g_x = max(0, -ul[0]), min(br[0], self.heatmap_size[0]) - ul[0]
