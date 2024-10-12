@@ -306,7 +306,7 @@ def get_pose_net(cfg, is_train, **kwargs):
 
     if is_train:
         #model.init_weights(cfg.NETWORK.PRETRAINED, mapping=cfg.COCO_TO_PANOPTIC_MAPPING)
-        model.init_weights(cfg.NETWORK.PRETRAINED)
+        model.init_weights(cfg.NETWORK.PRETRAINED, mapping=cfg.COCO_TO_OR_4D_MAPPING)
 
     return model
 
@@ -356,6 +356,6 @@ def get_pose_attn_net(cfg, is_train, **kwargs):
 
     if is_train:
         #model.init_weights(cfg.NETWORK.PRETRAINED, mapping=cfg.COCO_TO_PANOPTIC_MAPPING)
-        model.init_weights(cfg.NETWORK.PRETRAINED)
+        model.init_weights(cfg.NETWORK.PRETRAINED, mapping=cfg.COCO_TO_OR_4D_MAPPING)
 
     return model

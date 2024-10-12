@@ -138,21 +138,23 @@ class JointsDataset(Dataset):
         height, width, _ = data_numpy.shape
         c = np.array([width / 2.0, height / 2.0])
         s = get_scale((width, height), self.image_size)
-        s_add = (
-            np.random.uniform(0.1, self.scale_factor)
-            if random.random() <= 0.5
-            else -np.random.uniform(0.1, self.scale_factor) / 2.0
-        )
-        sc1 = np.array([_s + (_s * s_add) for _s in s])
-        r = (
-            np.clip(
-                np.random.uniform(-1,1) * self.rotation_factor,
-                -self.rotation_factor,
-                self.rotation_factor,
-            )
-            if random.random() <= 0.5
-            else 0
-        )
+        sc1 = s
+        r = 0
+        # s_add = (
+        #     np.random.uniform(0.1, self.scale_factor)
+        #     if random.random() <= 0.5
+        #     else -np.random.uniform(0.1, self.scale_factor) / 2.0
+        # )
+        # sc1 = np.array([_s + (_s * s_add) for _s in s])
+        # r = (
+        #     np.clip(
+        #         np.random.uniform(-1,1) * self.rotation_factor,
+        #         -self.rotation_factor,
+        #         self.rotation_factor,
+        #     )
+        #     if random.random() <= 0.5
+        #     else 0
+        # )
 
         trans = get_affine_transform(c, sc1, r, self.image_size)
         input = cv2.warpAffine(

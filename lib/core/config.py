@@ -34,6 +34,26 @@ config.L1_ATTN = False
 config.MIN_VIEWS_CHECK = 1
 config.EVAL_ROOTNET_ONLY = False
 config.COCO_TO_PANOPTIC_MAPPING = [5, 0, 11, 5, 7, 9, 11, 13, 15, 6, 8, 10, 12, 14, 16]
+config.COCO_TO_OR_4D_MAPPING = [
+    0,  # Nose -> Head
+    1,  # Left Eye -> Neck
+    2,  # Right Eye -> Left Shoulder
+    3,  # Left Ear -> Right Shoulder
+    4,  # Right Ear -> Left Hip
+    2,  # Left Shoulder -> Left Shoulder
+    3,  # Right Shoulder -> Right Shoulder
+    6,  # Left Elbow -> Left Elbow
+    7,  # Right Elbow -> Right Elbow
+    8,  # Left Wrist -> Left Wrist
+    9,  # Right Wrist -> Right Wrist
+    4,  # Left Hip -> Left Hip
+    5,  # Right Hip -> Right Hip
+    10,  # Left Knee -> Left Knee
+    11,  # Right Knee -> Right Knee
+    12,  # Left Ankle -> Left Foot
+    13   # Right Ankle -> Right Foot
+]
+
 # higherhrnet definition
 config.MODEL_EXTRA = edict()
 config.MODEL_EXTRA.PRETRAINED_LAYERS = ['*']

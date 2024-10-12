@@ -281,6 +281,12 @@ class JointsDatasetSSV(Dataset):
                 s = get_scale((width, height), self.image_size)
                 sc1 = np.array([_s + (_s * s1) for _s in s])
                 sc2 = np.array([_s + (_s * s2) for _s in s])
+
+                # sc1 = s
+                # sc2 = s
+                # r1 = 0
+                # r2 = 0
+
                 trans1 = get_affine_transform(c, sc1, r1, self.image_size)
                 trans2 = get_affine_transform(c, sc2, r2, self.image_size)
                 trans3 = get_affine_transform(c, s, 0, self.image_size)

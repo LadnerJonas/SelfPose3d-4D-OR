@@ -100,9 +100,21 @@ class CuboidProposalNetSoft(nn.Module):
             grid1Dz = (
                 np.linspace(-space_size[2] / 2, space_size[2] / 2, cube_size[2]) + space_center[2]
             )
-            self.min_x, self.max_x = grid1Dx.min() + 2500, grid1Dx.max() - 2000
-            self.min_y, self.max_y = grid1Dy.min() + 1500, grid1Dy.max() - 1500
-            self.min_z, self.max_z = grid1Dz.min() + 250, grid1Dz.max() - 300
+            # - 296.1
+            # - 826.0
+            # - -190.4
+
+            # self.min_x, self.max_x = grid1Dx.min() + 2500, grid1Dx.max() - 2000
+            # self.min_y, self.max_y = grid1Dy.min() + 1500, grid1Dy.max() - 1500
+            # self.min_z, self.max_z = grid1Dz.min() + 1500, grid1Dz.max() - 300
+
+            # self.min_x, self.max_x = grid1Dx.min() + 3750, grid1Dx.max() - 3750
+            # self.min_y, self.max_y = grid1Dy.min() + 3750, grid1Dy.max() - 3750
+            # self.min_z, self.max_z = grid1Dz.min() + 800, grid1Dz.max() - 800
+
+            self.min_x, self.max_x = grid1Dx.min() + 3250, grid1Dx.max() - 3250
+            self.min_y, self.max_y = grid1Dy.min() + 3250, grid1Dy.max() - 3250
+            self.min_z, self.max_z = grid1Dz.min() + 550, grid1Dz.max() - 550
             target = np.zeros(
                 (cfg.TRAIN.BATCH_SIZE, cube_size[0], cube_size[1], cube_size[2]), dtype=np.float32
             )
@@ -221,7 +233,7 @@ class CuboidProposalNetSoft(nn.Module):
             center_pts = [rand_coords[ii][None] for ii in range(rand_coords.shape[0])]
             cams = [deepcopy(c["camera"]) for c in meta]
             trans = meta[0]["trans"]
-            cps_2d = [cameras.project_pose_batch(center_pts, cam, trans) for cam in cams]
+            cps_2d = [cameras.project_pose_OR_4D_batch(center_pts, cam, trans) for cam in cams]
             heatmaps_all = []
             for cps_views in cps_2d:
                 hm_b = []

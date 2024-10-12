@@ -106,7 +106,10 @@ def project_point_radial_batch(x, R, T, f, c, k, p, trans):
         )
         # Apply the transformation
         ypix = torch.bmm(_tr[None].repeat(ypix.shape[0], 1, 1), ypix)
-        ypixel.append(ypix.permute(0, 2, 1)[..., :2])
+        x = ypix.permute(0, 2, 1)[..., :2]
+        ypixel.append(x)
+
+
     return ypixel
 
 
@@ -119,27 +122,49 @@ def project_pose_batch(x, cam, trans):
     R, T, f, c, k, p = cam["R"], cam["T"], cam["f"], cam["c"], cam["k"], cam["p"]
     return project_point_radial_batch(x, R, T, f, c, k, p, trans)
 
-def project_points_radial_OR_4D(input, R, T, f, c, k, p):
-    """
-    Args
-        input: Nx3 points in world coordinates
-        R: 3x3 Camera rotation matrix
-        T: 3x1 Camera translation parameters
-        f: (scalar) Camera focal length
-        c: 2x1 Camera center
-        k: 3x1 Camera radial distortion coefficients
-        p: 2x1 Camera tangential distortion coefficients
-    Returns
-        ypixel.T: Nx2 points in pixel space
-    """
-    normalized_scale = 500
-    n = input.shape[0]
-    xcam = torch.mm(R.inverse(), torch.t(input / normalized_scale) - T)
-
+# def project_points_radial_OR_4D(input, R, T, f, c, k, p):
+#     """
+#     Args
+#         input: Nx3 points in world coordinates
+#         R: 3x3 Camera rotation matrix
+#         T: 3x1 Camera translation parameters
+#         f: (scalar) Camera focal length
+#         c: 2x1 Camera center
+#         k: 3x1 Camera radial distortion coefficients
+#         p: 2x1 Camera tangential distortion coefficients
+#     Returns
+#         ypixel.T: Nx2 points in pixel space
+#     """
+#     normalized_scale = 500
+#     n = input.shape[0]
+#     xcam = torch.mm(R.inverse(), torch.t(input / normalized_scale) - T)
+#
+#     xcam[1, :] *= -1
+#     xcam[2, :] *= -1
+#
+#     y = xcam[:2, :] / (xcam[2, :] + 1e-5)
+#
+#     kexp = k.repeat((1, n))
+#     r2 = torch.sum(y ** 2, 0, keepdim=True)
+#     r2 = torch.clamp(r2, max=1e10)
+#     r2exp = torch.cat([r2, r2 ** 2, r2 ** 3], 0)
+#     radial = 1 + torch.einsum("ij,ij->j", kexp, r2exp)
+#
+#     tan_x = 2 * p[0] * y[0, :] * y[1, :] + p[1] * (r2 + 2 * y[0, :] ** 2)
+#     tan_y = p[0] * (r2 + 2 * y[1, :] ** 2) + 2 * p[1] * y[0, :] * y[1, :]
+#
+#     y_corr = y * radial + torch.stack([tan_x.squeeze(0), tan_y.squeeze(0)], dim=0)
+#
+#     ypixel_distorted = (f * y_corr) + c
+#
+#     return torch.t(ypixel_distorted)
+def project_points_radial_OR_4D(x, R, T, f, c, k, p):
+    n = x.shape[0]
+    xcam = torch.mm(R.inverse(), torch.t(x/500) - T)
     xcam[1, :] *= -1
     xcam[2, :] *= -1
 
-    y = xcam[:2, :] / (xcam[2, :] + 1e-5)
+    y = xcam[:2] / (xcam[2] + 1e-5)
 
     kexp = k.repeat((1, n))
     r2 = torch.sum(y ** 2, 0, keepdim=True)
@@ -147,38 +172,82 @@ def project_points_radial_OR_4D(input, R, T, f, c, k, p):
     r2exp = torch.cat([r2, r2 ** 2, r2 ** 3], 0)
     radial = 1 + torch.einsum("ij,ij->j", kexp, r2exp)
 
-    tan_x = 2 * p[0] * y[0, :] * y[1, :] + p[1] * (r2 + 2 * y[0, :] ** 2)
-    tan_y = p[0] * (r2 + 2 * y[1, :] ** 2) + 2 * p[1] * y[0, :] * y[1, :]
+    tan = p[0] * y[1] + p[1] * y[0]
+    corr = (radial + 2 * tan).repeat((2, 1))
 
-    y_corr = y * radial + torch.stack([tan_x.squeeze(0), tan_y.squeeze(0)], dim=0)
-
-    ypixel_distorted = (f * y_corr) + c
-
-    return torch.t(ypixel_distorted)
+    y = y * corr + torch.ger(torch.cat([p[1], p[0]]).view(-1), r2.view(-1))
+    ypixel = (f * y) + c
+    return torch.t(ypixel)
 
 def project_pose_OR_4D(x, camera):
     R, T, f, c, k, p = unfold_camera_param(camera, device=x.device)
     return project_points_radial_OR_4D(x, R, T, f, c, k, p)
 
 
-def project_points_radial_OR_4D_batch(x_list, R, T, f, c, k, p, trans):
-    output = []
-    for x_tensor in x_list:
-        if x_tensor.dim() == 2:
-            x_tensor = x_tensor.unsqueeze(0)
+# def project_points_radial_OR_4D_batch(x_list, R, T, f, c, k, p, trans):
+#     output = []
+#     for x_tensor in x_list:
+#         for x_batch, _R, _T, _f, _c, _k, _p, _tr in zip(x_tensor, R, T, f, c, k, p, trans):
+#             ypixel = project_points_radial_OR_4D(x_batch, _R, _T, _f, _c, _k, _p)
+#             ypixel_homogeneous = torch.cat(
+#                 (ypixel, torch.ones(ypixel.shape[0], 1, device=ypixel.device, dtype=ypixel.dtype)), dim=1
+#             )
+#             ypixel_homogeneous = ypixel_homogeneous.unsqueeze(2)
+#             ypixel_transformed = torch.bmm(_tr[None].repeat(ypixel_homogeneous.shape[0], 1, 1), ypixel_homogeneous)
+#             ypixel_transformed = ypixel_transformed.squeeze(2)
+#             ypixel_transformed = ypixel_transformed[..., :2].unsqueeze(0)
+#
+#             output.append(ypixel_transformed)
+#
+#     return output
+def project_points_radial_OR_4D_batch(x, R, T, f, c, k, p, trans):
+    x = [(_x / 500) - _T.reshape(1, 1, 3) for _x, _T in zip(x, T)]
+    ypixel = []
+    # iterating over batch size
+    for _x, _R, _T, _f, _c, _k, _p, _tr in zip(x, R, T, f, c, k, p, trans):
+        _R = _R.inverse()
+        num_poses = _x.shape[0]
+        _x = _x.permute((0, 2, 1))
+        _R_repeat = _R[None].repeat(num_poses, 1, 1)
+        _x = torch.bmm(_R_repeat, _x)
 
-        for x_batch, _R, _T, _f, _c, _k, _p, _tr in zip(x_tensor, R, T, f, c, k, p, trans):
-            ypixel = project_points_radial_OR_4D(x_batch, _R, _T, _f, _c, _k , _p)
+        # Invert y and z coordinates
+        _x[:, 1, :] *= -1  # Invert y (second dimension)
+        _x[:, 2, :] *= -1  # Invert z (third dimension)
 
-            ypixel_homogeneous = torch.cat(
-                (ypixel, torch.ones(ypixel.shape[0], 1, device=ypixel.device, dtype=ypixel.dtype)), dim=1
-            )
-            ypixel_homogeneous = ypixel_homogeneous.transpose(0, 1)
-            ypixel_homogeneous = ypixel_homogeneous.reshape(1, ypixel_homogeneous.shape[0], ypixel_homogeneous.shape[1])
+        y = _x[:, :2] / (_x[:, 2][:, None] + 1e-5)
+        r2 = torch.sum(y ** 2, 1, keepdim=True)
+        r2exp = torch.cat([r2, r2 ** 2, r2 ** 3], 1)
+        radial = 1 + torch.einsum(
+            "pij,pij->pj", _k.repeat((r2exp.shape[0], 1, r2exp.shape[-1])), r2exp
+        )
+        tan = _p[0] * y[:, 1] + _p[1] * y[:, 0]
+        corr = (radial[:, None] + 2 * tan[:, None]).repeat((1, 2, 1))
+        y = y * corr + torch.bmm(
+            torch.cat([_p[1], _p[0]])[None, ..., None].repeat(_x.shape[0], 1, 1), r2
+        )
+        ypix = (_f.repeat(num_poses, 1, 1) * y) + _c.repeat(num_poses, 1, 1)
 
-            ypixel_transformed = torch.bmm(_tr[None].repeat(ypixel_homogeneous.shape[0], 1, 1), ypixel_homogeneous)
-            output.append(ypixel_transformed.permute(0, 2, 1)[..., :2])
-    return output
+        # converting the coordinates into homogeneous form
+        ypix = torch.cat(
+            (
+                ypix,
+                torch.ones(
+                    ypix.shape[0],
+                    1,
+                    ypix.shape[-1],
+                    device=ypix.device,
+                    dtype=ypix.dtype,
+                ),
+            ),
+            1,
+        )
+        # Apply the transformation
+        ypix = torch.bmm(_tr[None].repeat(ypix.shape[0], 1, 1), ypix)
+        x = ypix.permute(0, 2, 1)[..., :2]
+        ypixel.append(x)
+
+    return ypixel
 
 
 def project_pose_OR_4D_batch(x, camera, trans):
