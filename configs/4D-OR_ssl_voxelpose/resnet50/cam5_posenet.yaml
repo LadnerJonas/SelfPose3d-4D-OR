@@ -8,7 +8,7 @@ DATA_DIR: ""
 GPUS: "0"
 OUTPUT_DIR: "./results/4D-OR-voxelpose/"
 LOG_DIR: "./results/4D-OR-voxelpose-log/"
-WORKERS: 2
+WORKERS: 1
 PRINT_FREQ: 100
 WITH_SSV: True
 WITH_ATTN: True
@@ -31,9 +31,8 @@ DATASET:
   ROT_FACTOR2: 0 # 45
   SCALE_FACTOR1: 0 # 0.35
   SCALE_FACTOR2: 0 # 0.35
-  APPLY_CUTOUT: True
-  #APPLY_CUTOUT: False
-  APPLY_RANDAUG: True
+  APPLY_CUTOUT: False # True
+  APPLY_RANDAUG: False # True
   #APPLY_RANDAUG: False
   TEST_SUBSET: "validation"
   TRAIN_SUBSET: "train"
@@ -56,11 +55,11 @@ NETWORK:
     - 2048
     - 1536
   IMAGE_SIZE:
-    - 1024
-    - 768
+    - 512
+    - 384
   HEATMAP_SIZE:
-    - 256
-    - 192
+    - 128
+    - 96
   SIGMA: 3
   NUM_JOINTS: 14
   USE_GT: False
@@ -68,7 +67,6 @@ NETWORK:
 POSE_RESNET:
   FINAL_CONV_KERNEL: 1
   DECONV_WITH_BIAS: False
-  #NUM_DECONV_LAYERS: 3
   NUM_DECONV_LAYERS: 3
   NUM_DECONV_FILTERS:
     - 256
