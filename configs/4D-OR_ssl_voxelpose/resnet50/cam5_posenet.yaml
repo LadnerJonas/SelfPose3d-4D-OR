@@ -27,13 +27,12 @@ DATASET:
   SUFFIX: "pseudo_hrnet_soft_9videos"
   FLIP: False
   ROOT: "data/4D-OR/data/" # 'data/panoptic/'
-  ROT_FACTOR1: 0 # 45
-  ROT_FACTOR2: 0 # 45
-  SCALE_FACTOR1: 0 # 0.35
-  SCALE_FACTOR2: 0 # 0.35
-  APPLY_CUTOUT: False # True
-  APPLY_RANDAUG: False # True
-  #APPLY_RANDAUG: False
+  ROT_FACTOR1: 45
+  ROT_FACTOR2: 45
+  SCALE_FACTOR1: 0.35
+  SCALE_FACTOR2: 0.35
+  APPLY_CUTOUT: True
+  APPLY_RANDAUG: True
   TEST_SUBSET: "validation"
   TRAIN_SUBSET: "train"
   ROOTIDX:
@@ -55,11 +54,11 @@ NETWORK:
     - 2048
     - 1536
   IMAGE_SIZE:
+    - 672
     - 512
-    - 384
   HEATMAP_SIZE:
+    - 168
     - 128
-    - 96
   SIGMA: 3
   NUM_JOINTS: 14
   USE_GT: False
@@ -83,13 +82,13 @@ TRAIN:
   BATCH_SIZE: 1
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 16
+  END_EPOCH: 20
   RESUME: false
   OPTIMIZER: adam
   LR: 0.0001
   LR_FACTOR: 0.1
-  LR_STEP: [13, 15]
-  L1_EPOCH: 13
+  LR_STEP: [17, 19]
+  L1_EPOCH: 17
 TEST:
   MODEL_FILE: "model_best.pth.tar"
   BATCH_SIZE: 1
@@ -113,7 +112,7 @@ MULTI_PERSON:
     - 80
     - 20
   MAX_PEOPLE_NUM: 8
-  THRESHOLD: 0.1
+  THRESHOLD: 0.3
 PICT_STRUCT:
   GRID_SIZE:
     - 2000.0
